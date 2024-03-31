@@ -14,24 +14,23 @@ const hardcodedCats = [
     { id: 12, name: "Alina", age: 10, weight: 4.9 },
 ];
 
+const errorCat = { id: -1, name: "Error", age: -1, weight: -1 };
+
 const startCatRepository = () => {
     let allCats = JSON.parse(JSON.stringify(hardcodedCats));
-    const setAllInternal = (newCats) => { allCats = newCats; };
 
-    const errorCat = { id: -1, name: "Error", age: -1, weight: -1 };
-
-    const getAllCats = () => allCats;
+    const getAll = () => allCats;
 
     const getCount = () => allCats.length;
 
-    const getCatById = (id) => {
+    const getById = (id) => {
         const cat = allCats.find(cat => cat.id === id);
         if (cat !== undefined)
             return cat;
         return errorCat;
     }
 
-    const addCat = ({ name, age, weight }) => {
+    const add = ({ name, age, weight }) => {
         let maximumId = 0;
         allCats.forEach(cat => {
             if (cat.id > maximumId)
@@ -40,26 +39,22 @@ const startCatRepository = () => {
 
         let newCat = {id: maximumId + 1, name: name, age: age, weight: weight};
 
-        setAllInternal([...allCats, newCat]);
+        allCats = [...allCats, newCat];
     }
 
-    const deleteCat = (id) => {
-        setAllInternal(allCats.filter(cat => cat.id !== id));
+    const deleteById = (id) => {
+        allCats = allCats.filter(cat => cat.id !== id);
     }
 
-    const updateCat = (id, newCat) => {
-        setAllInternal(allCats.map(currentCat => {
+    const update = (id, newCat) => {
+        allCats = allCats.map(currentCat => {
             if (currentCat.id === id)
                 return newCat;
             return currentCat;
-        }));
+        });
     }
 
-    // const setAll = (newCats) => {
-    //     setAllInternal([...newCats]);
-    // }
-
-    return { getAllCats, getCount, getCatById, addCat, deleteCat, updateCat };
+    return { getAll, getCount, getById, add, deleteById, update };
 }
 
 module.exports = {startCatRepository};

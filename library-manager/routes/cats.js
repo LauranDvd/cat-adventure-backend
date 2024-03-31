@@ -9,7 +9,19 @@ router.get('/', (req, res, next) => {
 });
 
 router.get('/all', (req, res, next) => {
-  res.json({ "cats": getAllCats() });
+  let options = req.body;
+
+  let allCats = JSON.parse(JSON.stringify(getAllCats()));
+
+  let sortByNameDirection = req.query.sortByNameDirection;
+  // console.log("req: " + req.query.sortByNameDirection);
+
+  if (sortByNameDirection === "asc")
+    allCats.sort((a, b) => a.name < b.name ? -1 : 1);
+  else
+    allCats.sort((a, b) => a.name > b.name ? -1 : 1)
+
+  res.json(allCats);
 });
 
 router.route("/get-by-id/:id").get((req, res) => {

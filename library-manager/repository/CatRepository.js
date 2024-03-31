@@ -1,7 +1,7 @@
 
 const hardcodedCats = [
-    { id: 1, name: "Sofia", age: 2, weight: 2.3 },
-    { id: 2, name: "Raymond", age: 5, weight: 3.8 },
+    { id: 1, name: "SofiaBack", age: 2, weight: 2.3 },
+    { id: 2, name: "RaymondBack", age: 5, weight: 3.8 },
 ];
 
 const startCatRepository = () => {

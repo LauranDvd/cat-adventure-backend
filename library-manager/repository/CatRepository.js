@@ -57,4 +57,4 @@ const startCatRepository = () => {
     return { getAll, getCount, getById, add, deleteById, update };
 }
 
-module.exports = {startCatRepository};
+module.exports = {startCatRepository, errorCat};

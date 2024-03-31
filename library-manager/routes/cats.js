@@ -2,24 +2,32 @@ var express = require('express');
 const { startCatRepository } = require('../repository/CatRepository');
 var router = express.Router();
 
-const { getAllCats, getCatById, addCat, deleteCat, updateCat } = startCatRepository();
+const pageSize = 5;
+
+const { getAllCats, getCount, getCatById, addCat, deleteCat, updateCat } = startCatRepository();
 
 router.get('/', (req, res, next) => {
   res.send('cats route...');
 });
 
-router.get('/all', (req, res, next) => {
-  let options = req.body;
+router.get('/count', (req, res, next) => {
+  res.json({ count: getCount() });
+})
 
+router.get('/all', (req, res, next) => {
   let allCats = JSON.parse(JSON.stringify(getAllCats()));
 
   let sortByNameDirection = req.query.sortByNameDirection;
+  let pageNumber = req.query.page;
   // console.log("req: " + req.query.sortByNameDirection);
 
   if (sortByNameDirection === "asc")
     allCats.sort((a, b) => a.name < b.name ? -1 : 1);
   else
-    allCats.sort((a, b) => a.name > b.name ? -1 : 1)
+    allCats.sort((a, b) => a.name > b.name ? -1 : 1);
+
+  if (pageNumber > 0)
+    allCats = allCats.slice(pageSize * (pageNumber - 1), pageSize * pageNumber);
 
   res.json(allCats);
 });

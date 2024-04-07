@@ -9,6 +9,8 @@ const validateCat = (cat) => {
     return false;
   if (Object.keys(cat).length !== 3)
     return false;
+  if (cat.name.length == 0)
+    return false;
   return true;
 }
 

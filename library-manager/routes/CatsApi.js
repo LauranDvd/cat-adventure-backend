@@ -17,35 +17,32 @@ const validateCat = (cat) => {
 }
 
 router.get('/', async (req, res, next) => {
-  const db = await connectToDatabase();
-  let collection = await db.collection("Cats");
-  let results = await collection.find({})
-    .limit(50)
-    .toArray();
-  res.send(results).status(200);
+  res.send([]).status(200);
 });
 
-router.get('/count', (req, res, next) => {
-  res.json({ count: getCatCount() });
+router.get('/count', async (req, res, next) => {
+  res.status(200).json({ count: await getCatCount() });
 })
 
-router.get('/all', (req, res, next) => {
+router.get('/all', async (req, res, next) => {
   let sortByNameDirection = req.query.sortByNameDirection;
   let pageNumber = req.query.page;
 
-  res.json(getAllCatsSortedAndPaginated(sortByNameDirection, pageNumber));
+  const result = await getAllCatsSortedAndPaginated(sortByNameDirection, pageNumber);
+  console.log('api result: ' + JSON.stringify(result));
+  res.status(200).json(result);
 });
 
-router.route("/get-by-id/:id").get((req, res) => {
+router.route("/get-by-id/:id").get(async (req, res) => {
   let givenId = req.params.id;
 
-  const cat = getCatById(givenId);
+  const cat = await getCatById(givenId);
 
   if (cat.id === -1) {
     return res.status(404).json({ error: `No cat with id ${givenId}` });
   }
 
-  res.json(cat);
+  res.status(200).json(cat);
 });
 
 router.post("/add", async (req, res, next) => {
@@ -60,7 +57,7 @@ router.post("/add", async (req, res, next) => {
     return res.status(400).json({ error: `Cat is not valid` });
 });
 
-router.route("/update/:id").put((req, res) => {
+router.route("/update/:id").put(async (req, res) => {
   let givenId = parseInt(req.params.id);
   const givenCat = req.body;
 
@@ -71,13 +68,15 @@ router.route("/update/:id").put((req, res) => {
     return res.status(404).json({ error: `No cat with id ${givenId}` });
   }
 
-  if (updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight }))
+  let successful = await updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight});
+
+  if (successful)
     return res.json({ message: "Successfully updated the cat" });
   else
     return res.status(400).json({ error: `Cat is not valid` });
 });
 
-router.route("/delete/:id").delete((req, res) => {
+router.route("/delete/:id").delete(async (req, res) => {
   let givenId = parseInt(req.params.id);
 
   if (getCatById(givenId).id === -1) {
@@ -86,7 +85,7 @@ router.route("/delete/:id").delete((req, res) => {
 
   deleteCat(givenId);
 
-  return res.json({ message: "Successfully deleted the cat" });
+  return res.status(200).json({ message: "Successfully deleted the cat" });
 });
 
 module.exports = router;

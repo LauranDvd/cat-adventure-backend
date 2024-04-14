@@ -6,8 +6,9 @@ const pageSize = 5;
 const startCatService = () => {
     const { getAll, getCount, getById, add, deleteById, update } = startCatRepository();
 
-    const getAllCatsSortedAndPaginated = (sortByNameDirection, pageNumber) => {
-        let allCats = JSON.parse(JSON.stringify(getAll()));
+    const getAllCatsSortedAndPaginated = async (sortByNameDirection, pageNumber) => {
+        let allCats = JSON.parse(JSON.stringify(await getAll()));
+        console.log('service all: ' + JSON.stringify(allCats));
 
         if (sortByNameDirection === "asc")
             allCats.sort((a, b) => a.name < b.name ? -1 : 1);
@@ -26,11 +27,11 @@ const startCatService = () => {
         return getCount();
     }
 
-    const getCatById = (id) => {
+    const getCatById = async (id) => {
         if (Number.isNaN(parseInt(id)))
             return errorCat;
 
-        return getById(parseInt(id));
+        return await getById(parseInt(id));
     }
 
     const addCat = ({ name, age, weight }) => {
@@ -41,11 +42,11 @@ const startCatService = () => {
         return true;
     }
 
-    const updateCat = (id, newCat) => {
+    const updateCat = async (id, newCat) => {
         if (Number.isNaN(parseInt(newCat.weight)) || Number.isNaN(parseInt(newCat.age)))
             return false;
 
-        update(id, newCat);
+        await update(id, newCat);
         return true;
     }
 

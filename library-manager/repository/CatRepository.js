@@ -41,14 +41,27 @@ const addRandomCats = (addFunction, numberOfCats) => {
 }
 
 const startCatRepository = () => {
-    let allCats = [];
+    const getAll = async () => {
+        // console.log('entered getall...');
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        // console.log('got collection...');
+        let results = await collection.find({})
+            .toArray();
+        results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
+        // console.log('results=' + JSON.stringify(results));
+        return results;
+    };
 
-    const getAll = () => allCats;
+    const getCount = async () => {
+        const allCats = await getAll();
+        return allCats.length;
+    }
 
-    const getCount = () => allCats.length;
-
-    const getById = (id) => {
+    const getById = async (id) => {
+        const allCats = await getAll();
         const cat = allCats.find(cat => cat.id === id);
+        console.log('cat: ' + JSON.stringify(cat));
         if (cat !== undefined)
             return cat;
         return errorCat;
@@ -56,6 +69,7 @@ const startCatRepository = () => {
 
     const add = async ({ name, age, weight }) => {
         let maximumId = 0;
+        const allCats = await getAll();
         allCats.forEach(cat => {
             if (cat.id > maximumId)
                 maximumId = cat.id;
@@ -63,36 +77,36 @@ const startCatRepository = () => {
 
         let newCat = { id: maximumId + 1, name: name, age: age, weight: weight };
 
-        allCats = [...allCats, newCat];
-
-
         const db = await connectToDatabase();
         let collection = await db.collection("Cats");
-        let catForDB = JSON.parse(JSON.stringify({ name, age, weight }));
-        catForDB.date = new Date();
-        let result = await collection.insertOne(catForDB);
-
-
-
+        newCat.date = new Date();
+        await collection.insertOne(newCat);
 
         sendSignal();
     }
 
-    const deleteById = (id) => {
-        allCats = allCats.filter(cat => cat.id !== id);
+    const deleteById = async (id) => {
+        const db = await connectToDatabase();
+        const query = { id: id };
+        const collection = db.collection("Cats");
+        await collection.deleteOne(query);
+
+        // allCats = allCats.filter(cat => cat.id !== id);
     }
 
-    const update = (id, newCat) => {
-        allCats = allCats.map(currentCat => {
-            if (currentCat.id === id)
-                return newCat;
-            return currentCat;
-        });
-    }
+    const update = async (id, newCat) => {
+        const db = await connectToDatabase();
+        const query = { id: id };
+        const updates = { $set: newCat };
+        let collection = await db.collection("Cats");
+        await collection.updateOne(query, updates);
 
-    addRandomCats(add, 12);
-    // for (let catWithoutId of hardcodedCatsWithoutId)
-    //     add(catWithoutId);
+        // allCats = allCats.map(currentCat => {
+        //     if (currentCat.id === id)
+        //         return newCat;
+        //     return currentCat;
+        // });
+    }
 
     setInterval(addRandomCats, 10000, add, 1);
 

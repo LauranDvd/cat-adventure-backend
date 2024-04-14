@@ -16,6 +16,8 @@ const { sendSignal } = require('../sockets/ClientWebSocket');
 //     { name: "Alina", age: 10, weight: 4.9 },
 // ];
 
+const connectToDatabase = require("../database/DBConnection");
+
 const getRandomName = () => {
     return faker.person.firstName();
 }
@@ -52,7 +54,7 @@ const startCatRepository = () => {
         return errorCat;
     }
 
-    const add = ({ name, age, weight }) => {
+    const add = async ({ name, age, weight }) => {
         let maximumId = 0;
         allCats.forEach(cat => {
             if (cat.id > maximumId)
@@ -62,6 +64,16 @@ const startCatRepository = () => {
         let newCat = { id: maximumId + 1, name: name, age: age, weight: weight };
 
         allCats = [...allCats, newCat];
+
+
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        let catForDB = JSON.parse(JSON.stringify({ name, age, weight }));
+        catForDB.date = new Date();
+        let result = await collection.insertOne(catForDB);
+
+
+
 
         sendSignal();
     }

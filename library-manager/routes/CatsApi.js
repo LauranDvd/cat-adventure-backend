@@ -2,6 +2,8 @@ var express = require('express');
 const { startCatService } = require('../service/CatService');
 var router = express.Router();
 
+const connectToDatabase = require("../database/DBConnection");
+
 const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat } = startCatService();
 
 const validateCat = (cat) => {
@@ -14,8 +16,13 @@ const validateCat = (cat) => {
   return true;
 }
 
-router.get('/', (req, res, next) => {
-  res.send('cats route...');
+router.get('/', async (req, res, next) => {
+  const db = await connectToDatabase();
+  let collection = await db.collection("Cats");
+  let results = await collection.find({})
+    .limit(50)
+    .toArray();
+  res.send(results).status(200);
 });
 
 router.get('/count', (req, res, next) => {
@@ -41,7 +48,7 @@ router.route("/get-by-id/:id").get((req, res) => {
   res.json(cat);
 });
 
-router.post("/add", (req, res, next) => {
+router.post("/add", async (req, res, next) => {
   let givenCat = req.body;
 
   if (!validateCat(givenCat))

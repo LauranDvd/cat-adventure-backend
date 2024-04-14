@@ -79,6 +79,8 @@ const startCatRepository = () => {
     // for (let catWithoutId of hardcodedCatsWithoutId)
     //     add(catWithoutId);
 
+    setInterval(addRandomCats, 10000, add, 1);
+
     return { getAll, getCount, getById, add, deleteById, update };
 }
 

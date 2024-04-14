@@ -1,4 +1,5 @@
 const { faker } = require('@faker-js/faker');
+const { sendSignal } = require('../sockets/ClientWebSocket');
 
 // const hardcodedCatsWithoutId = [
 //     { name: "Sofia", age: 2, weight: 2.3 },
@@ -61,6 +62,8 @@ const startCatRepository = () => {
         let newCat = { id: maximumId + 1, name: name, age: age, weight: weight };
 
         allCats = [...allCats, newCat];
+
+        sendSignal();
     }
 
     const deleteById = (id) => {

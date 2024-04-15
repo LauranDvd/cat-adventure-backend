@@ -1,4 +1,5 @@
 const { faker } = require('@faker-js/faker');
+const connectToDatabase = require("../database/DBConnection");
 
 const getRandomName = () => {
     return faker.vehicle.bicycle();
@@ -16,21 +17,33 @@ const addRandomToys = (addFunction, numberOfToys) => {
 }
 
 const startToyRepository = () => {
-    let allToys = [];
+    const getAll = async () => {
+        // console.log('entered getall...');
+        const db = await connectToDatabase();
+        let collection = await db.collection("Toys");
+        let results = await collection.find({})
+            .toArray();
+        results = results.map(toy => ({ id: toy.id, name: toy.name, catId: toy.catId }));
+        return results;
+    };
 
-    const getAll = () => allToys;
+    const getCount = async () => {
+        const allCats = await getAll();
+        return allCats.length;
+    }
 
-    const getCount = () => allToys.length;
-
-    const getById = (id) => {
+    const getById = async (id) => {
+        const allToys = await getAll();
         const toy = allToys.find(toy => toy.id === id);
         if (toy !== undefined)
             return toy;
         return errorToy;
     }
 
-    const add = ({ name, catId }) => {
+
+    const add = async ({ name, catId }) => {
         let maximumId = 0;
+        const allToys = await getAll();
         allToys.forEach(toy => {
             if (toy.id > maximumId)
                 maximumId = toy.id;
@@ -38,22 +51,26 @@ const startToyRepository = () => {
 
         let newToy = { id: maximumId + 1, name: name, catId: catId };
 
-        allToys = [...allToys, newToy];
+        const db = await connectToDatabase();
+        let collection = await db.collection("Toys");
+        newToy.date = new Date();
+        await collection.insertOne(newToy);
     }
 
-    const deleteById = (id) => {
-        allToys = allToys.filter(toy => toy.id !== id);
+    const deleteById = async (id) => {
+        const db = await connectToDatabase();
+        const query = { id: id };
+        const collection = db.collection("Toys");
+        await collection.deleteOne(query);
     }
 
-    const update = (id, newToy) => {
-        allToys = allToys.map(currentToy => {
-            if (currentToy.id === id)
-                return newToy;
-            return currentToy;
-        });
+    const update = async (id, newToy) => {
+        const db = await connectToDatabase();
+        const query = { id: id };
+        const updates = { $set: newToy };
+        let collection = await db.collection("Toys");
+        await collection.updateOne(query, updates);
     }
-
-    addRandomToys(add, 30);
 
     return { getAll, getCount, getById, add, deleteById, update };
 }

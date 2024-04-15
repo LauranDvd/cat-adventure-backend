@@ -2,7 +2,6 @@ var express = require('express');
 const { startCatService } = require('../service/CatService');
 var router = express.Router();
 
-const connectToDatabase = require("../database/DBConnection");
 
 const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat } = startCatService();
 

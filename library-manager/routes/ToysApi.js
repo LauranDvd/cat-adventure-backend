@@ -2,6 +2,7 @@ var express = require('express');
 const { startToyService } = require('../service/ToyService');
 var router = express.Router();
 
+
 const { getAllToys, getToyCount, getToyById, addToy, updateToy, deleteToy } = startToyService();
 
 const validateToy = (toy) => {
@@ -18,18 +19,21 @@ router.get('/', (req, res, next) => {
     res.send('toys route...');
 });
 
-router.get('/count', (req, res, next) => {
-    res.json({ count: getToyCount() });
+router.get('/count', async (req, res, next) => {
+    console.log('enter count');
+    let count = await getToyCount();
+    console.log('got count');
+    res.json({ count: count });
 })
 
-router.get('/all', (req, res, next) => {
-    res.json(getAllToys());
+router.get('/all', async (req, res, next) => {
+    res.json(await getAllToys());
 });
 
-router.route("/get-by-id/:id").get((req, res) => {
+router.route("/get-by-id/:id").get(async (req, res) => {
     let givenId = req.params.id;
 
-    const toy = getToyById(givenId);
+    const toy = await getToyById(givenId);
 
     if (toy.id === -1) {
         return res.status(404).json({ error: `No toy with id ${givenId}` });
@@ -38,7 +42,7 @@ router.route("/get-by-id/:id").get((req, res) => {
     res.json(toy);
 });
 
-router.post("/add", (req, res, next) => {
+router.post("/add", async (req, res, next) => {
     let givenToy = req.body;
 
     if (!validateToy(givenToy))
@@ -50,7 +54,7 @@ router.post("/add", (req, res, next) => {
         return res.status(400).json({ error: `Toy is not valid` });
 });
 
-router.route("/update/:id").put((req, res) => {
+router.route("/update/:id").put(async (req, res) => {
     let givenId = parseInt(req.params.id);
     const givenToy = req.body;
 
@@ -61,13 +65,15 @@ router.route("/update/:id").put((req, res) => {
         return res.status(404).json({ error: `No toy with id ${givenId}` });
     }
 
-    if (updateToy(givenId, { id: givenId, name: givenToy.name, catId: givenToy.catId }))
+    let successful = await updateToy(givenId, { id: givenId, name: givenToy.name, catId: givenToy.catId });
+
+    if (successful)
         return res.json({ message: "Successfully updated the toy" });
     else
         return res.status(400).json({ error: `Toy is not valid` });
 });
 
-router.route("/delete/:id").delete((req, res) => {
+router.route("/delete/:id").delete(async (req, res) => {
     let givenId = parseInt(req.params.id);
 
     if (getToyById(givenId).id === -1) {

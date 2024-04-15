@@ -6,21 +6,22 @@ const pageSize = 5;
 const startToyService = () => {
     const { getAll, getCount, getById, add, deleteById, update } = startToyRepository();
 
-    const getAllToys = () => {
-        let allToys = JSON.parse(JSON.stringify(getAll()));
+    const getAllToys = async () => {
+        let allToys = JSON.parse(JSON.stringify(await getAll()));
 
         return allToys;
     };
 
-    const getToyCount = () => {
-        return getCount();
+    const getToyCount = async () => {
+        console.log('daaa');
+        return await getCount();
     }
 
-    const getToyById = (id) => {
+    const getToyById = async (id) => {
         if (Number.isNaN(parseInt(id)))
             return errorToy;
 
-        return getById(parseInt(id));
+        return await getById(parseInt(id));
     }
 
     const addToy = ({ name, catId }) => {
@@ -33,11 +34,11 @@ const startToyService = () => {
         return true;
     }
 
-    const updateToy = (id, newToy) => {
+    const updateToy = async (id, newToy) => {
         if (Number.isNaN(parseInt(newToy.catId)))
             return false;
 
-        update(id, newToy);
+        await update(id, newToy);
         return true;
     }
 

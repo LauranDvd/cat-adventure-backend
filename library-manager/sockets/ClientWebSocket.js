@@ -12,10 +12,7 @@ function sendSignal() {
 }
 
 wss.on('connection', (ws) => {
-    console.log('New client connected');
-
     ws.on('close', () => {
-        console.log('Client disconnected');
     });
 });
 

@@ -7,9 +7,7 @@ async function connectToDatabase() {
     let conn;
     try {
         conn = await client.connect();
-        console.log("Connected to MongoDB Atlas");
     } catch (e) {
-        console.error("Error connecting to MongoDB: ", e);
         throw e;
     }
     return conn.db("CatApp");

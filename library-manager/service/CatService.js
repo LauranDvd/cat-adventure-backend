@@ -7,6 +7,8 @@ const startCatService = () => {
     const { getAll, getCount, getById, add, deleteById, update } = startCatRepository();
 
     const getAllCatsSortedAndPaginated = async (sortByNameDirection, pageNumber) => {
+        console.log("will get cats: " + sortByNameDirection + pageNumber);
+
         let allCats = JSON.parse(JSON.stringify(await getAll()));
         console.log('service all: ' + JSON.stringify(allCats));
 

@@ -3,7 +3,7 @@ const { startCatService } = require('../service/CatService');
 var router = express.Router();
 
 
-const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat } = startCatService();
+const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat } = startCatService();
 
 const validateCat = (cat) => {
   if (!cat.hasOwnProperty("name") || !cat.hasOwnProperty("age") || !cat.hasOwnProperty("weight"))
@@ -86,5 +86,10 @@ router.route("/delete/:id").delete(async (req, res) => {
 
   return res.status(200).json({ message: "Successfully deleted the cat" });
 });
+
+router.route("/toys_per_cat").get(async (req, res) => {
+  const result = await getToysPerCat();
+  res.status(200).json(result);
+})
 
 module.exports = router;

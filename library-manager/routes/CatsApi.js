@@ -82,13 +82,16 @@ router.route("/delete/:id").delete(async (req, res) => {
     return res.status(404).json({ error: `No cat with id ${givenId}` });
   }
 
-  deleteCat(givenId);
-
-  return res.status(200).json({ message: "Successfully deleted the cat" });
+  if (deleteCat(givenId) === true)
+    return res.status(200).json({ message: "Successfully deleted the cat" });
+  else 
+    return res.status(400).json({ message: "Cannot delete the cat" });
 });
 
 router.route("/toys_per_cat").get(async (req, res) => {
-  const result = await getToysPerCat();
+  let count = req.query.count;
+
+  const result = await getToysPerCat(count);
   res.status(200).json(result);
 })
 

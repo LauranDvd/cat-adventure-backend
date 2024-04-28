@@ -53,11 +53,11 @@ const startCatService = () => {
     }
 
     const deleteCat = (id) => {
-        deleteById(id);
+        return deleteById(id);
     }
 
-    const getToysPerCat = () => {
-        return toysPerCat();
+    const getToysPerCat = (count) => {
+        return toysPerCat(count);
     }
 
     return { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat };

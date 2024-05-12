@@ -4,7 +4,7 @@ const { startCatRepository, errorCat } = require('../repository/CatRepository');
 const pageSize = 5;
 
 const startCatService = () => {
-    const { getAll, getCount, getById, add, deleteById, update, toysPerCat } = startCatRepository();
+    const { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById } = startCatRepository();
 
     const getAllCatsSortedAndPaginated = async (sortByNameDirection, pageNumber) => {
         console.log("will get cats: " + sortByNameDirection + pageNumber);
@@ -56,11 +56,15 @@ const startCatService = () => {
         return deleteById(id);
     }
 
+    const getUsersFavoriteBreed = async (userId) => {
+        return await getUsersFavoriteBreedById(userId);
+    }
+
     const getToysPerCat = (count) => {
         return toysPerCat(count);
     }
 
-    return { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat };
+    return { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed };
 }
 
 module.exports = { startCatService };

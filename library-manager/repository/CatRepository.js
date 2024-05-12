@@ -217,9 +217,9 @@ const startCatRepository = () => {
                     theNumber: "$count"
                 }
             },
-            {
-                $sort: { theNumber: -1 }
-            },
+            // {
+            //     $sort: { theNumber: -1 }
+            // },
             {
                 $limit: count
             }

@@ -1,1 +1,1 @@
-web: node ./library-manager/app.js
+web: cd library-manager && npm start

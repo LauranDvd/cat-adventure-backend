@@ -186,7 +186,7 @@ const startCatRepository = () => {
         count = parseInt(count);
 
         const db = await connectToDatabase();
-        
+
         const catToysAggregation = [
             {
                 $group: {
@@ -224,19 +224,36 @@ const startCatRepository = () => {
                 $limit: count
             }
         ];
-    
+
         const results = await db.collection("Toys").aggregate(catToysAggregation).toArray();
-    
+
         return results;
+    }
+
+    // const getById = async (id) => {
+    //     const allCats = await getAll();
+    //     const cat = allCats.find(cat => cat.id === id);
+    //     console.log('cat: ' + JSON.stringify(cat));
+    //     if (cat !== undefined)
+    //         return cat;
+    //     return errorCat;
+    // }
+    const getUsersFavoriteBreedById = async (userId) => {
+        const db = await connectToDatabase();
+        const user = (await db.collection("AppUsers").find({ id: userId }).toArray())[0];
+        if (user === undefined)
+            return "";
+        const breed = user.favoriteBreed;
+        return breed;
     }
 
     // setInterval(addRandomCats, 10000, add, 1);
     // setInterval(addRandomToys, 2, addToy, 1);
 
     // removeDuplicates();
-    
 
-    return { getAll, getCount, getById, add, deleteById, update, toysPerCat };
+
+    return { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById };
 }
 
 // const removeDuplicates = async () => {
@@ -247,7 +264,7 @@ const startCatRepository = () => {
 //     let allTheCats = await collection.find({})
 //         .toArray();
 //     // allTheCats = allTheCats.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
-    
+
 //     let theirIdsToRemove = [];
 //     let ourIdsTillNow = [];
 //     for (let cat of allTheCats) {

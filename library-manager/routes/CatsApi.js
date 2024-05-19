@@ -1,9 +1,13 @@
 var express = require('express');
 const { startCatService } = require('../service/CatService');
+const checkJwt = require('../TokenCheck');
 var router = express.Router();
+var jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 
-const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat } = startCatService();
+const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed } =
+  startCatService();
 
 const validateCat = (cat) => {
   if (!cat.hasOwnProperty("name") || !cat.hasOwnProperty("age") || !cat.hasOwnProperty("weight"))
@@ -67,7 +71,7 @@ router.route("/update/:id").put(async (req, res) => {
     return res.status(404).json({ error: `No cat with id ${givenId}` });
   }
 
-  let successful = await updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight});
+  let successful = await updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight });
 
   if (successful)
     return res.json({ message: "Successfully updated the cat" });
@@ -84,15 +88,48 @@ router.route("/delete/:id").delete(async (req, res) => {
 
   if (deleteCat(givenId) === true)
     return res.status(200).json({ message: "Successfully deleted the cat" });
-  else 
+  else
     return res.status(400).json({ message: "Cannot delete the cat" });
 });
+
+router.route("/users-favorite-breed/:id").get(async (req, res) => {
+  let givenId = req.params.id;
+
+  let authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header is missing' });
+  }
+  let token = authHeader.split(' ')[1];
+
+  console.log('token: ' + token);
+
+  var certificate = fs.readFileSync('routes/key.pem');  // get public key
+
+  jwt.verify(token, certificate, { algorithms: ['RS256'] }, async function (err, decoded) {
+    console.log('error: ' + err);
+    console.log('decoded: ' + JSON.stringify(decoded));
+
+    if (decoded === undefined || decoded.sub !== "auth0|" + givenId) {
+      console.log('bad token...');
+
+      return res.status(401).json({ error: `Bad token!!` });
+    } else {
+      const breed = await getUsersFavoriteBreed(givenId);
+
+      if (breed === "") {
+        return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
+      }
+
+      res.status(200).json(breed);
+    }
+  });
+})
 
 router.route("/toys_per_cat").get(async (req, res) => {
   let count = req.query.count;
 
   const result = await getToysPerCat(count);
   res.status(200).json(result);
-})
+});
 
 module.exports = router;

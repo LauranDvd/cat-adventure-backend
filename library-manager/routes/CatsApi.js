@@ -1,6 +1,9 @@
 var express = require('express');
 const { startCatService } = require('../service/CatService');
+const checkJwt = require('../TokenCheck');
 var router = express.Router();
+var jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 
 const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed } =
@@ -92,13 +95,34 @@ router.route("/delete/:id").delete(async (req, res) => {
 router.route("/users-favorite-breed/:id").get(async (req, res) => {
   let givenId = req.params.id;
 
-  const breed = await getUsersFavoriteBreed(givenId);
-
-  if (breed === "") {
-    return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
+  let authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header is missing' });
   }
+  let token = authHeader.split(' ')[1];
 
-  res.status(200).json(breed);
+  console.log('token: ' + token);
+
+  var certificate = fs.readFileSync('routes/key.pem');  // get public key
+
+  jwt.verify(token, certificate, { algorithms: ['RS256'] }, async function (err, decoded) {
+    console.log('error: ' + err);
+    console.log('decoded: ' + JSON.stringify(decoded));
+
+    if (decoded === undefined || decoded.sub !== "auth0|" + givenId) {
+      console.log('bad token...');
+
+      return res.status(401).json({ error: `Bad token!!` });
+    } else {
+      const breed = await getUsersFavoriteBreed(givenId);
+
+      if (breed === "") {
+        return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
+      }
+
+      res.status(200).json(breed);
+    }
+  });
 })
 
 router.route("/toys_per_cat").get(async (req, res) => {

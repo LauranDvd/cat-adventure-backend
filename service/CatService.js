@@ -52,8 +52,8 @@ const startCatService = () => {
         return true;
     }
 
-    const deleteCat = (id) => {
-        return deleteById(id);
+    const deleteCat = async (id) => {
+        return await deleteById(id);
     }
 
     const getUsersFavoriteBreed = async (userId) => {

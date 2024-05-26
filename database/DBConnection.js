@@ -5,15 +5,21 @@ const connectionString = process.env.DB_ATLAS_URI || "";
 
 // mongoose.connect('mongodb://127.0.0.1:27017/CatApp', { useNewUrlParser: true, useUnifiedTopology: true });
 
+let dbInstance = null; // singleton
+
 async function connectToDatabase() {
+    if (dbInstance) {
+        return dbInstance;
+    }
+
     const client = new MongoClient(connectionString);
-    let conn;
     try {
-        conn = await client.connect();
+        await client.connect();
+        dbInstance = client.db("CatApp");
+        return dbInstance;
     } catch (e) {
         throw e;
     }
-    return conn.db("CatApp");
     // const db = mongoose.connection;
     // db.once('open', () => {
     //     console.log('Connected to MongoDB');

@@ -14,6 +14,7 @@ console.log("done dotenv config");
 // var indexRouter = require('./routes/index');
 var catsRouter = require('./routes/CatsApi');
 var toysRouter = require('./routes/ToysApi');
+var usersRouter = require('./routes/UsersApi');
 
 var app = express();
 
@@ -36,6 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // app.use('/', indexRouter);
 app.use('/cats', catsRouter);
 app.use('/toys', toysRouter);
+app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

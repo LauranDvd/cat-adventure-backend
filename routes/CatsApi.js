@@ -1,9 +1,9 @@
 var express = require('express');
 const { startCatService } = require('../service/CatService');
-const checkJwt = require('../TokenCheck');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
 const fs = require('fs');
+const { checkTokenThenDoStuff, checkManagerOrAdminTokenThenDoStuff } = require('../auth/TokenCheck');
 
 
 const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed } =
@@ -48,80 +48,67 @@ router.route("/get-by-id/:id").get(async (req, res) => {
   res.status(200).json(cat);
 });
 
-router.post("/add", async (req, res, next) => {
-  let givenCat = req.body;
+router.post("/add", async (req, res) => {
+  checkManagerOrAdminTokenThenDoStuff(req, res, function (decoded) {
+    let givenCat = req.body;
 
-  if (!validateCat(givenCat))
-    return res.status(400).json({ error: `Cat has an invalid form` });
+    if (!validateCat(givenCat))
+      return res.status(400).json({ error: `Cat has an invalid form` });
 
-  if (addCat(givenCat))
-    return res.json({ message: "Successfully added the cat" });
-  else
-    return res.status(400).json({ error: `Cat is not valid` });
+    if (addCat(givenCat))
+      return res.json({ message: "Successfully added the cat" });
+    else
+      return res.status(400).json({ error: `Cat is not valid` });
+  });
 });
 
 router.route("/update/:id").put(async (req, res) => {
-  let givenId = parseInt(req.params.id);
-  const givenCat = req.body;
+  checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
+    let givenId = parseInt(req.params.id);
+    const givenCat = req.body;
 
-  if (!validateCat(givenCat))
-    return res.status(400).json({ error: `Cat has an invalid form` });
+    if (!validateCat(givenCat))
+      return res.status(400).json({ error: `Cat has an invalid form` });
 
-  if (getCatById(givenId).id === -1) {
-    return res.status(404).json({ error: `No cat with id ${givenId}` });
-  }
+    if (getCatById(givenId).id === -1) {
+      return res.status(404).json({ error: `No cat with id ${givenId}` });
+    }
 
-  let successful = await updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight });
+    let successful = await updateCat(givenId, { id: givenId, name: givenCat.name, age: givenCat.age, weight: givenCat.weight });
 
-  if (successful)
-    return res.json({ message: "Successfully updated the cat" });
-  else
-    return res.status(400).json({ error: `Cat is not valid` });
+    if (successful)
+      return res.json({ message: "Successfully updated the cat" });
+    else
+      return res.status(400).json({ error: `Cat is not valid` });
+  });
 });
 
 router.route("/delete/:id").delete(async (req, res) => {
-  let givenId = parseInt(req.params.id);
+  checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
+    let givenId = parseInt(req.params.id);
 
-  if (getCatById(givenId).id === -1) {
-    return res.status(404).json({ error: `No cat with id ${givenId}` });
-  }
+    if (getCatById(givenId).id === -1) {
+      return res.status(404).json({ error: `No cat with id ${givenId}` });
+    }
 
-  if (deleteCat(givenId) === true)
-    return res.status(200).json({ message: "Successfully deleted the cat" });
-  else
-    return res.status(400).json({ message: "Cannot delete the cat" });
+    if (await deleteCat(givenId) === true)
+      return res.status(200).json({ message: "Successfully deleted the cat" });
+    else
+      return res.status(400).json({ message: "Cannot delete the cat" });
+  });
 });
 
-router.route("/users-favorite-breed/:id").get(async (req, res) => {
-  let givenId = req.params.id;
+router.route("/users-favorite-breed").get(async (req, res) => {
+  checkTokenThenDoStuff(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(6, decoded.sub.length);
 
-  let authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Authorization header is missing' });
-  }
-  let token = authHeader.split(' ')[1];
+    const breed = await getUsersFavoriteBreed(userId);
 
-  console.log('token: ' + token);
-
-  var certificate = fs.readFileSync('routes/key.pem');  // get public key
-
-  jwt.verify(token, certificate, { algorithms: ['RS256'] }, async function (err, decoded) {
-    console.log('error: ' + err);
-    console.log('decoded: ' + JSON.stringify(decoded));
-
-    if (decoded === undefined || decoded.sub !== "auth0|" + givenId) {
-      console.log('bad token...');
-
-      return res.status(401).json({ error: `Bad token!!` });
-    } else {
-      const breed = await getUsersFavoriteBreed(givenId);
-
-      if (breed === "") {
-        return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
-      }
-
-      res.status(200).json(breed);
+    if (breed === "") {
+      return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
     }
+
+    res.status(200).json(breed);
   });
 })
 

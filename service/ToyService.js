@@ -1,8 +1,6 @@
 const { startToyRepository, errorToy } = require('../repository/ToyRepository');
 
 
-const pageSize = 5;
-
 const startToyService = () => {
     const { getAll, getCount, getById, add, deleteById, update } = startToyRepository();
 

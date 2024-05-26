@@ -40,7 +40,6 @@ const startToyRepository = () => {
         return errorToy;
     }
 
-
     const add = async ({ name, catId }) => {
         let maximumId = 0;
         const allToys = await getAll();

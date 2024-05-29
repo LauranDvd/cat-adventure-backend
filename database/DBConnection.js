@@ -12,6 +12,7 @@ async function connectToDatabase() {
         return dbInstance;
     }
 
+    console.log('will connect to mongo with connectionstring=' + JSON.stringify(connectionString));
     const client = new MongoClient(connectionString);
     try {
         await client.connect();

@@ -4,10 +4,10 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-
-const mongoose = require('mongoose');
-
 const dotenv = require("dotenv");
+const https = require("https");
+const fs = require("fs");
+
 dotenv.config();
 console.log("done dotenv config");
 
@@ -54,6 +54,18 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// https
+//   .createServer(
+//     {
+//       key: fs.readFileSync("https/key.pem"),
+//       cert: fs.readFileSync("https/cert.pem"),
+//     },
+//     app
+//   )
+//   .listen(4000, () => {
+//     console.log("server, https, is runing at port 4000");
+//   });
 
 // const PORT = process.env.PORT || 3000; // Use the PORT environment variable if available, otherwise default to 3000
 

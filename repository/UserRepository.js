@@ -102,7 +102,7 @@ const startUserRepository = () => {
             data: data
         };
 
-        axios.request(config)
+        return axios.request(config)
             .then(async (response) => {
                 const userId = response.data.user_id;
                 console.log('added user id: ' + JSON.stringify(userId));
@@ -111,9 +111,12 @@ const startUserRepository = () => {
                 let collection = await db.collection("AppUsers");
                 const userForDb = { id: userId.substring(6, userId.length), favoriteBreed: "", userRole: roleId };
                 await collection.insertOne(userForDb);
+
+                return "";
             })
             .catch((error) => {
                 console.log(error);
+                return error;
             });
     }
 
@@ -188,7 +191,17 @@ const startUserRepository = () => {
             });
     }
 
-    return { getById, getRolesName, isUserAdminOrManager, isUserAdmin, getAll, add, deleteById, updateRole, updateName };
+    const addBasicUserInformation = async (id) => {
+        const db = await connectToDatabase();
+        let collection = await db.collection("AppUsers");
+        const userForDb = { id: id, favoriteBreed: "", userRole: 1 };
+        await collection.insertOne(userForDb);
+    }
+
+    return {
+        getById, getRolesName, isUserAdminOrManager, isUserAdmin, getAll, add, deleteById, updateRole,
+        updateName, addBasicUserInformation
+    };
 }
 
 module.exports = { startUserRepository, errorUser };

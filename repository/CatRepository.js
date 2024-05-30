@@ -63,6 +63,20 @@ const startCatRepository = () => {
         return results;
     };
 
+    const getAllSortedPaginated = async (sortByNameDirection, firstEntryNumber, lastEntryNumber) => {
+        console.log('repo: first, last=' + firstEntryNumber + ", " + lastEntryNumber);
+
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        let results = await collection.find({})
+            .sort({ name: sortByNameDirection })
+            .skip(firstEntryNumber - 1)
+            .limit(lastEntryNumber - firstEntryNumber + 1)
+            .toArray();
+        results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
+        return results;
+    }
+
     const getAllToys = async () => {
         const db = await connectToDatabase();
         let collection = await db.collection("Toys");
@@ -73,17 +87,23 @@ const startCatRepository = () => {
     };
 
     const getCount = async () => {
-        const allCats = await getAll();
-        return allCats.length;
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        return collection.count();
     }
 
     const getById = async (id) => {
-        const allCats = await getAll();
-        const cat = allCats.find(cat => cat.id === id);
-        console.log('cat: ' + JSON.stringify(cat));
-        if (cat !== undefined)
-            return cat;
-        return errorCat;
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        let results = await collection.find({ id: id })
+            .toArray();
+
+        if (results.length === 0) {
+            return errorCat;
+        }
+
+        results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
+        return results[0];
     }
 
     const addToy = async ({ catId, name }) => {
@@ -103,17 +123,14 @@ const startCatRepository = () => {
     }
 
     const add = async ({ name, age, weight }) => {
-        let maximumId = 0;
-        const allCats = await getAll();
-        allCats.forEach(cat => {
-            if (cat.id > maximumId)
-                maximumId = cat.id;
-        });
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+
+        let maximumId = (await collection.find({}).sort({ id: -1 }).limit(1).toArray())[0].id;
+        console.log('maximum id in Cats: ' + JSON.stringify(maximumId));
 
         let newCat = { id: maximumId + 1, name: name, age: age, weight: weight };
 
-        const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
         newCat.date = new Date();
         await collection.insertOne(newCat);
 
@@ -253,7 +270,7 @@ const startCatRepository = () => {
     // removeDuplicates();
 
 
-    return { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById };
+    return { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById, getAllSortedPaginated };
 }
 
 // const removeDuplicates = async () => {

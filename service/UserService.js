@@ -2,24 +2,29 @@ const { startUserRepository, errorUser } = require('../repository/UserRepository
 
 
 const startUserService = () => {
-    const { getById, getRolesName, getAll, add, deleteById, updateRole, updateName } = startUserRepository();
+    const { getById, getRolesName, getAll, add, deleteById, updateRole, updateName, addBasicUserInformation } = startUserRepository();
 
     const getUsersRoleName = async (id) => {
-        const user = await getById(id);
-        if (user === errorUser)
-            return -1;
+        let user = await getById(id);
+        if (user === errorUser) {
+            // return -1;
+            await addBasicUserInformation(id);
+            user = await getById(id);
+        }
 
-        return getRolesName(user.userRole);
+        let rolesName = await getRolesName(user.userRole);
+        console.log('getusersrolename will return ' + rolesName);
+
+        return rolesName;
     }
-    
+
     const getAllUsers = async () => {
         return getAll();
     }
 
     const addUser = ({ name, email, password, role }) => {
         console.log('service will add user with rolename=' + JSON.stringify(role));
-        add({ name, email, password, roleName: role });
-        return true;
+        return add({ name, email, password, roleName: role });
     }
 
     const deleteUser = (userId) => {

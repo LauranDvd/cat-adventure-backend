@@ -16,6 +16,11 @@ const validateCat = (cat) => {
     return false;
   if (cat.name.length == 0)
     return false;
+  if (Number.isNaN(parseInt(cat.age)) || Number.isNaN(parseInt(cat.weight)))
+    return false;
+  if (parseInt(cat.age) < 0 || parseInt(cat.weight) < 0)
+    return false;
+
   return true;
 }
 

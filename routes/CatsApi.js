@@ -6,8 +6,8 @@ const fs = require('fs');
 const { checkTokenThenDoStuff, checkManagerOrAdminTokenThenDoStuff } = require('../auth/TokenCheck');
 
 
-const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed } =
-  startCatService();
+const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed,
+  getCatAgeDistribution } = startCatService();
 
 const validateCat = (cat) => {
   if (!cat.hasOwnProperty("name") || !cat.hasOwnProperty("age") || !cat.hasOwnProperty("weight"))
@@ -121,6 +121,13 @@ router.route("/toys_per_cat").get(async (req, res) => {
   let count = req.query.count;
 
   const result = await getToysPerCat(count);
+  res.status(200).json(result);
+});
+
+
+router.get('/age-distribution', async (req, res, next) => {
+  const result = await getCatAgeDistribution();
+  console.log('api result: ' + JSON.stringify(result));
   res.status(200).json(result);
 });
 

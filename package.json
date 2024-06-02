@@ -8,6 +8,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@reduxjs/toolkit": "^2.2.2",
     "async-lock": "^1.4.1",
     "axios": "^1.7.2",
@@ -29,11 +30,12 @@
     "mongodb-memory-server": "^9.1.8",
     "mongoose": "^8.3.2",
     "morgan": "~1.9.1",
+    "node-int64": "^0.4.0",
     "nodemon": "^3.1.0",
+    "piscina": "^4.5.1",
     "react-redux": "^9.1.0",
     "supertest": "^6.3.4",
-    "ws": "^8.17.0",
-    "@faker-js/faker": "^8.4.1"
+    "ws": "^8.17.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

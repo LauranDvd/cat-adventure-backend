@@ -24,15 +24,11 @@ const validateCat = (cat) => {
   return true;
 }
 
-router.get('/', async (req, res, next) => {
-  res.send([]).status(200);
-});
-
 router.get('/count', async (req, res, next) => {
   res.status(200).json({ count: await getCatCount() });
 })
 
-router.get('/all', async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   let sortByNameDirection = req.query.sortByNameDirection;
   let pageNumber = req.query.page;
 
@@ -53,7 +49,7 @@ router.route("/get-by-id/:id").get(async (req, res) => {
   res.status(200).json(cat);
 });
 
-router.post("/add", async (req, res) => {
+router.post("/", async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, function (decoded) {
     let givenCat = req.body;
 
@@ -67,7 +63,7 @@ router.post("/add", async (req, res) => {
   });
 });
 
-router.route("/update/:id").put(async (req, res) => {
+router.route("/:id").put(async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
     let givenId = parseInt(req.params.id);
     const givenCat = req.body;
@@ -88,7 +84,7 @@ router.route("/update/:id").put(async (req, res) => {
   });
 });
 
-router.route("/delete/:id").delete(async (req, res) => {
+router.route("/:id").delete(async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
     let givenId = parseInt(req.params.id);
 

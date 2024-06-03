@@ -1,6 +1,4 @@
-const { faker } = require('@faker-js/faker');
 const { sendSignal } = require('../sockets/ClientWebSocket');
-const { Worker } = require('worker_threads');
 const path = require('path');
 const Piscina = require('piscina');
 
@@ -33,7 +31,7 @@ const addRandomToysOnSeparateThread = (interval, bulkSize) => {
     console.log('ran piscina');
 }
 
-const startCatRepository = () => {
+const startCatRepository = (generateCatsInBackground = true) => {
     const getAll = async () => {
         // console.log('entered getall...');
         const db = await connectToDatabase();
@@ -60,14 +58,14 @@ const startCatRepository = () => {
         return results;
     }
 
-    const getAllToys = async () => {
-        const db = await connectToDatabase();
-        let collection = await db.collection("Toys");
-        let results = await collection.find({})
-            .toArray();
-        results = results.map(toy => ({ id: toy.id, catId: toy.catId, name: toy.name }));
-        return results;
-    };
+    // const getAllToys = async () => {
+    //     const db = await connectToDatabase();
+    //     let collection = await db.collection("Toys");
+    //     let results = await collection.find({})
+    //         .toArray();
+    //     results = results.map(toy => ({ id: toy.id, catId: toy.catId, name: toy.name }));
+    //     return results;
+    // };
 
     const getCount = async () => {
         const db = await connectToDatabase();
@@ -126,7 +124,6 @@ const startCatRepository = () => {
         let collection = await db.collection("Cats");
         await collection.updateOne(query, updates);
     }
-
 
     const toysPerCat = async (count) => {
         count = parseInt(count);
@@ -207,7 +204,8 @@ const startCatRepository = () => {
     }
 
     // addRandomCatsOnSeparateThread(0, 1000);
-    addRandomCatsOnSeparateThread(5000, 1);
+    if (generateCatsInBackground)
+        addRandomCatsOnSeparateThread(5000, 1);
     // addRandomToysOnSeparateThread(0, 10000);
     // setInterval(addRandomToys, 1000, addToy, 1);
 

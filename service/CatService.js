@@ -11,7 +11,7 @@ const startCatService = () => {
 
     const getAllCatsSortedAndPaginated = async (sortByNameDirection, pageNumber) => {
         console.log("will get cats: " + sortByNameDirection + pageNumber);
-        if (pageNumber === "0") {
+        if (pageNumber === "0" || pageNumber === 0) {
             return getAll();
         }
 

@@ -4,21 +4,22 @@ const { startCatRepository, errorCat } = require('../repository/CatRepository');
 const pageSize = 5;
 
 const startCatService = () => {
-    const { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById } = startCatRepository();
+    const { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById, getAllSortedPaginated,
+        getAgeDistribution
+    } =
+        startCatRepository();
 
     const getAllCatsSortedAndPaginated = async (sortByNameDirection, pageNumber) => {
         console.log("will get cats: " + sortByNameDirection + pageNumber);
+        if (pageNumber === "0" || pageNumber === 0) {
+            return getAll();
+        }
 
-        let allCats = JSON.parse(JSON.stringify(await getAll()));
-        console.log('service all: ' + JSON.stringify(allCats));
-
-        if (sortByNameDirection === "asc")
-            allCats.sort((a, b) => a.name < b.name ? -1 : 1);
-        else
-            allCats.sort((a, b) => a.name > b.name ? -1 : 1);
-
-        if (pageNumber > 0)
-            allCats = allCats.slice(pageSize * (pageNumber - 1), pageSize * pageNumber);
+        let allCats = await getAllSortedPaginated(
+            sortByNameDirection === "asc" ? 1 : -1,
+            pageSize * (pageNumber - 1) + 1,
+            pageSize * pageNumber
+        );
 
         console.log('service: returning ' + allCats);
 
@@ -47,6 +48,8 @@ const startCatService = () => {
     const updateCat = async (id, newCat) => {
         if (Number.isNaN(parseInt(newCat.weight)) || Number.isNaN(parseInt(newCat.age)))
             return false;
+        // if (parseInt(newCat.weight) < 0 || parseInt(newCat.age < 0))
+        //     return false;
 
         await update(id, newCat);
         return true;
@@ -64,7 +67,14 @@ const startCatService = () => {
         return toysPerCat(count);
     }
 
-    return { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed };
+    const getCatAgeDistribution = async () => {
+        return await getAgeDistribution();
+    }
+
+    return {
+        getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed,
+        getCatAgeDistribution
+    };
 }
 
 module.exports = { startCatService };

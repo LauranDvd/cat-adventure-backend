@@ -28,30 +28,34 @@ const startToyRepository = () => {
     };
 
     const getCount = async () => {
-        const allCats = await getAll();
-        return allCats.length;
+        const db = await connectToDatabase();
+        let collection = await db.collection("Toys");
+        return collection.count();
     }
 
     const getById = async (id) => {
-        const allToys = await getAll();
-        const toy = allToys.find(toy => toy.id === id);
-        if (toy !== undefined)
-            return toy;
-        return errorToy;
+        const db = await connectToDatabase();
+        let collection = await db.collection("Toys");
+        let results = await collection.find({ id: id })
+            .toArray();
+
+        if (results.length === 0) {
+            return errorToy;
+        }
+
+        results = results.map(toy => ({ id: toy.id, name: toy.name, catId: toy.catId }));
+        return results[0];
     }
 
     const add = async ({ name, catId }) => {
-        let maximumId = 0;
-        const allToys = await getAll();
-        allToys.forEach(toy => {
-            if (toy.id > maximumId)
-                maximumId = toy.id;
-        });
+        const db = await connectToDatabase();
+        let collection = await db.collection("Toys");
+
+        let maximumId = (await collection.find({}).sort({ id: -1 }).limit(1).toArray())[0].id;
+        console.log('maximum id in Toys: ' + JSON.stringify(maximumId));
 
         let newToy = { id: maximumId + 1, name: name, catId: catId };
 
-        const db = await connectToDatabase();
-        let collection = await db.collection("Toys");
         newToy.date = new Date();
         await collection.insertOne(newToy);
     }

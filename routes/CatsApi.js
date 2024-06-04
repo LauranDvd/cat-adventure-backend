@@ -6,8 +6,8 @@ const fs = require('fs');
 const { checkTokenThenDoStuff, checkManagerOrAdminTokenThenDoStuff } = require('../auth/TokenCheck');
 
 
-const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed } =
-  startCatService();
+const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed,
+  getCatAgeDistribution } = startCatService();
 
 const validateCat = (cat) => {
   if (!cat.hasOwnProperty("name") || !cat.hasOwnProperty("age") || !cat.hasOwnProperty("weight"))
@@ -16,18 +16,19 @@ const validateCat = (cat) => {
     return false;
   if (cat.name.length == 0)
     return false;
+  if (Number.isNaN(parseInt(cat.age)) || Number.isNaN(parseInt(cat.weight)))
+    return false;
+  if (parseInt(cat.age) < 0 || parseInt(cat.weight) < 0)
+    return false;
+
   return true;
 }
-
-router.get('/', async (req, res, next) => {
-  res.send([]).status(200);
-});
 
 router.get('/count', async (req, res, next) => {
   res.status(200).json({ count: await getCatCount() });
 })
 
-router.get('/all', async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   let sortByNameDirection = req.query.sortByNameDirection;
   let pageNumber = req.query.page;
 
@@ -48,7 +49,7 @@ router.route("/get-by-id/:id").get(async (req, res) => {
   res.status(200).json(cat);
 });
 
-router.post("/add", async (req, res) => {
+router.post("/", async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, function (decoded) {
     let givenCat = req.body;
 
@@ -62,7 +63,7 @@ router.post("/add", async (req, res) => {
   });
 });
 
-router.route("/update/:id").put(async (req, res) => {
+router.route("/:id").put(async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
     let givenId = parseInt(req.params.id);
     const givenCat = req.body;
@@ -83,7 +84,7 @@ router.route("/update/:id").put(async (req, res) => {
   });
 });
 
-router.route("/delete/:id").delete(async (req, res) => {
+router.route("/:id").delete(async (req, res) => {
   checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
     let givenId = parseInt(req.params.id);
 
@@ -116,6 +117,13 @@ router.route("/toys_per_cat").get(async (req, res) => {
   let count = req.query.count;
 
   const result = await getToysPerCat(count);
+  res.status(200).json(result);
+});
+
+
+router.get('/age-distribution', async (req, res, next) => {
+  const result = await getCatAgeDistribution();
+  console.log('api result: ' + JSON.stringify(result));
   res.status(200).json(result);
 });
 

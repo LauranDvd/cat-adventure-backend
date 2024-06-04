@@ -71,11 +71,14 @@ router.route("/create").post(async (req, res) => {
 
         if (!validateUser(givenUser))
             return res.status(400).json({ error: `User has an invalid form` });
-
-        if (addUser(givenUser))
+        
+        const errors = await addUser(givenUser);
+        if (errors === "")
             return res.json({ message: "Successfully added the user" });
-        else
-            return res.status(400).json({ error: `User is not valid` });
+        else {
+            console.log('adding invalid user: ' + errors);
+            return res.status(400).json({ error: `User is not valid: ${errors}` });
+        }
     });
 })
 

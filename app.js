@@ -4,10 +4,10 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-
-const mongoose = require('mongoose');
-
 const dotenv = require("dotenv");
+const https = require("https");
+const fs = require("fs");
+
 dotenv.config();
 console.log("done dotenv config");
 
@@ -55,10 +55,14 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
-// const PORT = process.env.PORT || 3000; // Use the PORT environment variable if available, otherwise default to 3000
+const options = {
+  key: fs.readFileSync('./https/key.pem'),
+  cert: fs.readFileSync('./https/cert.pem')
+};
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
+const server = https.createServer(options, app);
+server.listen(4443, () => {
+  console.log('HTTPS Server running on port 4443');
+});
 
 module.exports = app;

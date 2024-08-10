@@ -1,7 +1,7 @@
 const connectToDatabase = require("../database/DBConnection");
 const axios = require('axios');
 
-const errorUser = { id: -1, favoriteBreed: "Error", userRole: -1 };
+const errorUser = { id: -1, favoriteBreed: "Error", userRole: -1, money: -1 };
 
 const startUserRepository = () => {
     const getAllInDatabase = async () => {
@@ -9,7 +9,7 @@ const startUserRepository = () => {
         let collection = await db.collection("AppUsers");
         let results = await collection.find({})
             .toArray();
-        results = results.map(user => ({ id: user.id, favoriteBreed: user.favoriteBreed, userRole: user.userRole }));
+        results = results.map(user => ({ id: user.id, favoriteBreed: user.favoriteBreed, userRole: user.userRole, money: user.money }));
         return results;
     };
 
@@ -72,7 +72,7 @@ const startUserRepository = () => {
                 return response.data;
             })
             .catch((error) => {
-                console.log(error);
+                console.log("get all users auth0 error: " + JSON.stringify(error));
             });
     }
 
@@ -194,13 +194,90 @@ const startUserRepository = () => {
     const addBasicUserInformation = async (id) => {
         const db = await connectToDatabase();
         let collection = await db.collection("AppUsers");
-        const userForDb = { id: id, favoriteBreed: "", userRole: 1 };
+        const userForDb = { id: id, favoriteBreed: "", userRole: 1, money: 50 };
         await collection.insertOne(userForDb);
+    }
+
+    const addMoney = async (userId, amount) => {
+        console.log(`Adding money: User ID ${userId}, Amount ${amount}`);
+
+        const db = await connectToDatabase();
+        const collection = db.collection("AppUsers");
+
+        await collection.updateOne(
+            { id: userId },
+            { $inc: { money: amount } }
+        );
+    }
+
+    const getByIdAuth0 = async (wantedId) => {
+        const allUsers = await getAll();
+        return (allUsers.filter(user => {
+            // console.log(`id of compared user is: ${user.identities[0].user_id}`);
+            return user.identities[0].user_id === wantedId;
+        }))[0];
+    }
+
+    const getCutenessLeaderboard = async () => {
+        try {
+            const db = await connectToDatabase();
+            const catsCollection = db.collection("Cats");
+
+            const leaderboardAggregation = [
+                {
+                    $match: {
+                        ownerId: { $exists: true, $ne: null },
+                        cuteness: { $exists: true, $ne: null }
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$ownerId",
+                        totalCuteness: { $sum: "$cuteness" }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "AppUsers",
+                        localField: "_id",
+                        foreignField: "id",
+                        as: "user"
+                    }
+                },
+                {
+                    $unwind: "$user"
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        // userName: "$user.name",
+                        userName: "$user.id",
+                        totalCuteness: 1
+                    }
+                },
+                {
+                    $sort: { totalCuteness: -1 }
+                }
+            ];
+
+            const leaderboard = await catsCollection.aggregate(leaderboardAggregation).toArray();
+            for (let entry of leaderboard) {
+                const user = await getByIdAuth0(entry.userName);
+                console.log(`get by id auth0 user: ${user}`);
+                entry.userName = user.name || "error";
+            }
+            console.log(`repo leaderboard: ${JSON.stringify(leaderboard)}`);
+
+            return leaderboard;
+        } catch (error) {
+            console.error('Error fetching cuteness leaderboard:', error);
+            return [];
+        }
     }
 
     return {
         getById, getRolesName, isUserAdminOrManager, isUserAdmin, getAll, add, deleteById, updateRole,
-        updateName, addBasicUserInformation
+        updateName, addBasicUserInformation, addMoney, getCutenessLeaderboard, getByIdAuth0
     };
 }
 

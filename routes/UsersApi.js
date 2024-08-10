@@ -5,7 +5,7 @@ const fs = require('fs');
 const { startUserService } = require('../service/UserService');
 const { checkTokenThenDoStuff, checkAdminTokenThenDoStuff } = require('../auth/TokenCheck');
 
-const { getUsersRoleName, getAllUsers, addUser, deleteUser, updateUserRole, updateUserName } =
+const { getUsersRoleName, getAllUsers, addUser, deleteUser, updateUserRole, updateUserName, getUsersMoney, processBoughtMoney, getLeaderboard } =
     startUserService();
 
 const validateUser = (user) => {
@@ -33,6 +33,22 @@ router.route("/role-name").get(async (req, res) => {
         }
 
         res.status(200).json(roleName);
+    });
+});
+
+router.route("/money").get(async (req, res) => {
+    return checkTokenThenDoStuff(req, res, async function (decoded) {
+        console.log('you passed the token check. decoded=' + JSON.stringify(decoded));
+
+        const money = await getUsersMoney(decoded.sub.substring(6, decoded.sub.length));
+
+        console.log('will respond with money=' + money);
+
+        if (money === -1 || money === undefined) {
+            return res.status(404).json({ error: `User doesnt exist or doesnt have money assigned` });
+        }
+
+        res.status(200).json(money);
     });
 });
 
@@ -71,7 +87,7 @@ router.route("/create").post(async (req, res) => {
 
         if (!validateUser(givenUser))
             return res.status(400).json({ error: `User has an invalid form` });
-        
+
         const errors = await addUser(givenUser);
         if (errors === "")
             return res.json({ message: "Successfully added the user" });
@@ -129,6 +145,24 @@ router.route("/update-name/:id").put(async (req, res) => {
     });
 });
 
+router.post("/process-bought-money", async (req, res) => {
+    console.log('api process bought');
+
+    checkTokenThenDoStuff(req, res, function (decoded) {
+        let userId = decoded.sub.substring(6, decoded.sub.length);
+
+        if (processBoughtMoney(userId))
+            return res.json({ message: "Successfully processed bought money" });
+        else
+            return res.status(400).json({ error: `Could not process bought money` });
+    });
+});
+
+router.get("/leaderboard", async (req, res) => {
+    const result = await getLeaderboard();
+    console.log('api result: ' + JSON.stringify(result));
+    res.status(200).json(result);
+})
 
 
 module.exports = router;

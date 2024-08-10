@@ -2,7 +2,8 @@ const { startUserRepository, errorUser } = require('../repository/UserRepository
 
 
 const startUserService = () => {
-    const { getById, getRolesName, getAll, add, deleteById, updateRole, updateName, addBasicUserInformation } = startUserRepository();
+    const { getById, getRolesName, getAll, add, deleteById, updateRole,
+        updateName, addBasicUserInformation, addMoney, getCutenessLeaderboard } = startUserRepository();
 
     const getUsersRoleName = async (id) => {
         let user = await getById(id);
@@ -16,6 +17,16 @@ const startUserService = () => {
         console.log('getusersrolename will return ' + rolesName);
 
         return rolesName;
+    }
+
+    const getUsersMoney = async (id) => {
+        let user = await getById(id);
+        if (user === errorUser) {
+            await addBasicUserInformation(id);
+            user = await getById(id);
+        }
+
+        return user.money;
     }
 
     const getAllUsers = async () => {
@@ -46,7 +57,19 @@ const startUserService = () => {
         return true;
     }
 
-    return { getUsersRoleName, getAllUsers, addUser, deleteUser, updateUserRole, updateUserName };
+    const processBoughtMoney = (userId) => {
+        addMoney(userId, 50);
+        return true;
+    }
+
+    const getLeaderboard = () => {
+        return getCutenessLeaderboard();
+    }
+
+    return {
+        getUsersRoleName, getUsersMoney, getAllUsers, addUser, deleteUser, updateUserRole, updateUserName,
+        processBoughtMoney, getLeaderboard
+    };
 }
 
 module.exports = { startUserService };

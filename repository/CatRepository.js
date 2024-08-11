@@ -4,7 +4,7 @@ const Piscina = require('piscina');
 
 const connectToDatabase = require("../database/DBConnection");
 
-const errorCat = { id: -1, name: "Error", age: -1, weight: -1 };
+const errorCat = { id: -1, name: "Error", age: -1, weight: -1, cuteness: -1, ownerId: -1 };
 
 const max = (a, b) => {
     return a >= b ? a : b;
@@ -54,7 +54,10 @@ const startCatRepository = (generateCatsInBackground = true) => {
             .skip(firstEntryNumber - 1)
             .limit(lastEntryNumber - firstEntryNumber + 1)
             .toArray();
-        results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
+        results = results.map(cat => ({
+            id: cat.id, name: cat.name, age: cat.age, weight: cat.weight, cuteness: cat.cuteness,
+            ownerId: cat.ownerId
+        }));
         return results;
     }
 
@@ -83,18 +86,23 @@ const startCatRepository = (generateCatsInBackground = true) => {
             return errorCat;
         }
 
-        results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
+        results = results.map(cat => (
+            {
+                id: cat.id, name: cat.name, age: cat.age, weight: cat.weight, cuteness: cat.cuteness, ownerId: cat.ownerId,
+                avatarUrl: cat.avatarUrl
+            }
+        ));
         return results[0];
     }
 
-    const add = async ({ name, age, weight }) => {
+    const add = async ({ name, age, weight, cuteness, ownerId }) => {
         const db = await connectToDatabase();
         let collection = await db.collection("Cats");
 
         let maximumId = (await collection.find({}).sort({ id: -1 }).limit(1).toArray())[0].id;
         console.log('maximum id in Cats: ' + JSON.stringify(maximumId));
 
-        let newCat = { id: maximumId + 1, name: name, age: age, weight: weight };
+        let newCat = { id: maximumId + 1, name: name, age: age, weight: weight, cuteness: cuteness, ownerId: ownerId };
 
         newCat.date = new Date();
         await collection.insertOne(newCat);
@@ -118,11 +126,33 @@ const startCatRepository = (generateCatsInBackground = true) => {
     }
 
     const update = async (id, newCat) => {
+        console.log(`repo will update and set this cat: ${JSON.stringify(newCat)}`);
+
         const db = await connectToDatabase();
         const query = { id: id };
         const updates = { $set: newCat };
         let collection = await db.collection("Cats");
         await collection.updateOne(query, updates);
+    }
+
+    const buy = async (catId, userId) => {
+        const db = await connectToDatabase();
+
+        const userCollection = db.collection("AppUsers");
+        const user = await userCollection.findOne({ id: userId });
+
+        if (!user || !user.money || user.money < 10) {
+            console.log('User does not have enough money or does not exist.');
+            return false;
+        }
+
+        const newMoneyAmount = user.money - 10;
+        await userCollection.updateOne({ id: userId }, { $set: { money: newMoneyAmount } });
+
+        const catCollection = db.collection("Cats");
+        await catCollection.updateOne({ id: catId }, { $set: { ownerId: userId } });
+
+        return true;
     }
 
     const toysPerCat = async (count) => {
@@ -179,6 +209,24 @@ const startCatRepository = (generateCatsInBackground = true) => {
         return breed;
     }
 
+    const getUsersCatsById = async (userId) => {
+        const db = await connectToDatabase();
+        let collection = await db.collection("Cats");
+        let results = await collection.find({ ownerId: userId }).toArray();
+
+        results = results.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            age: cat.age,
+            weight: cat.weight,
+            cuteness: cat.cuteness,
+            ownerId: cat.ownerId,
+            avatarUrl: cat.avatarUrl
+        }));
+
+        return results;
+    }
+
     const getAgeDistribution = async () => {
         const db = await connectToDatabase();
 
@@ -203,6 +251,43 @@ const startCatRepository = (generateCatsInBackground = true) => {
         return results;
     }
 
+    const setTheAvatar = async (catId, avatarParameters) => {
+        avatarParameters = JSON.parse(avatarParameters);
+
+        console.log(`repo setavatar params: ${JSON.stringify(avatarParameters)}`);
+
+        const avatarUrl = `https://cat-avatars.vercel.app/api/cat?parts=\
+${avatarParameters.body},\
+${avatarParameters.fur},\
+${avatarParameters.eyes},\
+${avatarParameters.mouth},\
+${avatarParameters.accessory}`;
+        console.log(`repo avatarurl: ${avatarUrl}`);
+
+        const db = await connectToDatabase();
+        const findQuery = { id: catId };
+        const updates = { $set: { avatarUrl: avatarUrl } };
+        const collection = await db.collection("Cats");
+        await collection.updateOne(findQuery, updates);
+
+        return true;
+    }
+
+    const getCutestCatOfUser = async (userId) => {
+        const db = await connectToDatabase();
+        const collection = db.collection("Cats");
+
+        const aggregationPipeline = [
+            { $match: { ownerId: userId } },
+            { $sort: { cuteness: -1 } },
+            { $limit: 1 }
+        ];
+
+        const result = await collection.aggregate(aggregationPipeline).toArray();
+
+        return result.length > 0 ? result[0] : errorCat;
+    }
+
     // addRandomCatsOnSeparateThread(0, 1000);
     if (generateCatsInBackground)
         addRandomCatsOnSeparateThread(5000, 1);
@@ -211,7 +296,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
 
     return {
         getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById, getAllSortedPaginated,
-        getAgeDistribution
+        getAgeDistribution, getUsersCatsById, buy, setTheAvatar, getCutestCatOfUser
     };
 }
 

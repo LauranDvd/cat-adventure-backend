@@ -219,6 +219,7 @@ const startUserRepository = () => {
     }
 
     const getCutenessLeaderboard = async () => {
+        console.log(`will get leaderboard`);
         try {
             const db = await connectToDatabase();
             const catsCollection = db.collection("Cats");
@@ -261,9 +262,15 @@ const startUserRepository = () => {
             ];
 
             const leaderboard = await catsCollection.aggregate(leaderboardAggregation).toArray();
+            const allUsersAuth0 = await getAll();
             for (let entry of leaderboard) {
-                const user = await getByIdAuth0(entry.userName);
-                console.log(`get by id auth0 user: ${user}`);
+                console.log(`leaderboard entry: ${JSON.stringify(entry)}`);
+
+                // const user = await getByIdAuth0(entry.userName);
+                const user = (allUsersAuth0.filter(testedUser => {
+                    return testedUser.identities[0].user_id === entry.userName;
+                }))[0];
+                console.log(`leaderboard - get by id auth0 user: ${JSON.stringify(user)}`);
                 entry.userName = user.name || "error";
             }
             console.log(`repo leaderboard: ${JSON.stringify(leaderboard)}`);

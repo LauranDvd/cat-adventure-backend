@@ -5,6 +5,54 @@ const openai = new OpenAI();
 
 const pageSize = 5;
 
+const AVATAR_JSON_KEYS_AND_MAXIMUM = [["body", 15], ["fur", 10], ["eyes", 15], ["mouth", 9], ["accessory", 17]];
+const DEFAULT_AVATAR_PARAMETERS_STRING = `{"body": 1, "fur": 1, "eyes": 1, "mouth": 1, "accessory": 20}`;
+
+const getJsonKeysCount = (jsonObject) => {
+    return Object.keys(jsonObject).length;
+}
+
+const avatarJsonContainsRequiredKeys = (jsonObject) => {
+    for (const oneKeyAndMaximum of AVATAR_JSON_KEYS_AND_MAXIMUM) {
+        const oneKey = oneKeyAndMaximum[0];
+
+        if (!jsonObject.hasOwnProperty(oneKey))
+            return false;
+    }
+    return true;
+}
+
+const avatarJsonHasNumbersTooBig = (jsonObject) => {
+    for (const oneKeyAndMaximum of AVATAR_JSON_KEYS_AND_MAXIMUM) {
+        const key = oneKeyAndMaximum[0];
+        const maximum = oneKeyAndMaximum[1];
+
+        if (jsonObject[key] > maximum) {
+            console.log(`object ${jsonObject} has key ${key} too big: it is ${jsonObject[key]}, max is ${maximum}`)
+            
+            return true;
+        }
+    }
+    return false;
+}
+
+const areAvatarParametersValid = (avatarParametersString) => {
+    try {
+        const avatarParametersObject = JSON.parse(avatarParametersString);
+
+        if (getJsonKeysCount(avatarParametersObject) != AVATAR_JSON_KEYS_AND_MAXIMUM.length)
+            return false;
+        if (!avatarJsonContainsRequiredKeys(avatarParametersObject))
+            return false;
+        if (avatarJsonHasNumbersTooBig(avatarParametersObject))
+            return false;
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+
 const startCatService = () => {
     const { getAll, getCount, getById, add, deleteById, update, toysPerCat, getUsersFavoriteBreedById, getAllSortedPaginated,
         getAgeDistribution, getUsersCatsById, buy, setTheAvatar, getCutestCatOfUser
@@ -87,7 +135,7 @@ const startCatService = () => {
 
         const chatGptPrompt = `I have a site called CatApp, where users buy cats and play with them. Users can set their cats' avatars, by inputting a prompt, which I send to you. What you have to do is to decide, based on their prompt, how the cat's avatar's body, fur, eyes, mouth, and accessory should look like.
             Hence, first I will give you the different types of body, fur, eyes, mouth, and accessory. Then, I will give you the user's prompt.
-            You will have to give me one number for each part (body, fur, eyes, mouth, and accessory). Write it as a JSON, for example: {body: 3, fur: 2, eyes: 8, mouth: 4, accessory: 5}. Only send the JSON, do not send anything else.
+            You will have to give me one number for each part (body, fur, eyes, mouth, and accessory). Write it as a JSON, for example: {"body": 3, "fur": 2, "eyes": 8, "mouth": 4, "accessory": 5}. Only send the JSON, do not send anything else. Include quotation marks around the keys. 
 
             Body types:
             1: bright orange
@@ -169,11 +217,14 @@ const startCatService = () => {
             model: "gpt-3.5-turbo",
         });
 
-        const avatarParameters = completion.choices[0].message.content;
+        let avatarParameters = completion.choices[0].message.content;
 
-        console.log('response for generating avatar: ' + avatarParameters);
-
+        console.log(`service setavatar params not stringified: ${avatarParameters}`);
         console.log(`service setavatar params: ${JSON.stringify(avatarParameters)}`);
+
+        if (!areAvatarParametersValid(avatarParameters)) {
+            avatarParameters = DEFAULT_AVATAR_PARAMETERS_STRING;
+        }
 
         return await setTheAvatar(catId, avatarParameters);
     }

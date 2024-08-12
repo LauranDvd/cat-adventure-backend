@@ -20,8 +20,6 @@ module.exports = async ({ interval, bulkSize }) => {
         return faker.number.int(10) + faker.number.float({ fractionDigits: 2 });
     }
 
-    // console.log('we are in the worker');
-
     const db = await connectToDatabase();
     let collection = await db.collection("Cats");
 

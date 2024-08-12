@@ -18,7 +18,6 @@ const addRandomToys = (addFunction, numberOfToys) => {
 
 const startToyRepository = () => {
     const getAll = async () => {
-        // console.log('entered getall...');
         const db = await connectToDatabase();
         let collection = await db.collection("Toys");
         let results = await collection.find({})

@@ -75,7 +75,7 @@ router.route("/:id").put(async (req, res) => {
     if (currentCat.id === -1) {
       return res.status(404).json({ error: `No cat with id ${givenId}` });
     }
-    console.log(`in updatebyid, getbyid returned: ${JSON.stringify(currentCat)}`);
+    console.log(`in updateById, getById returned: ${JSON.stringify(currentCat)}`);
 
     let successful = await updateCat(
       givenId,
@@ -122,7 +122,6 @@ router.route("/users-favorite-breed").get(async (req, res) => {
 });
 
 router.route("/mine").get(async (req, res) => {
-  console.log('mine will do token check!');
   return checkTokenThenDoStuff(req, res, async function (decoded) {
     let userId = decoded.sub.substring(6, decoded.sub.length);
 
@@ -150,8 +149,6 @@ router.get('/age-distribution', async (req, res, next) => {
 });
 
 router.post("/buy", async (req, res) => {
-  console.log('api buy!@@#');
-
   checkTokenThenDoStuff(req, res, function (decoded) {
     let catId = req.body.catId;
     let userId = decoded.sub.substring(6, decoded.sub.length);

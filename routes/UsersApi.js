@@ -22,7 +22,7 @@ const validateUser = (user) => {
 
 router.route("/role-name").get(async (req, res) => {
     return checkTokenThenDoStuff(req, res, async function (decoded) {
-        console.log('you passed the token check. decoded=' + JSON.stringify(decoded));
+        console.log('you passed the token check.');
 
         const roleName = await getUsersRoleName(decoded.sub.substring(6, decoded.sub.length));
 
@@ -38,7 +38,7 @@ router.route("/role-name").get(async (req, res) => {
 
 router.route("/money").get(async (req, res) => {
     return checkTokenThenDoStuff(req, res, async function (decoded) {
-        console.log('you passed the token check. decoded=' + JSON.stringify(decoded));
+        console.log('passed the token check');
 
         const money = await getUsersMoney(decoded.sub.substring(6, decoded.sub.length));
 
@@ -54,7 +54,7 @@ router.route("/money").get(async (req, res) => {
 
 router.route("/get-all").get(async (req, res) => {
     return checkAdminTokenThenDoStuff(req, res, async function (decoded) {
-        console.log('you passed the admin token check. decoded=' + JSON.stringify(decoded));
+        console.log('you passed the admin token check');
 
         const allUsers = await getAllUsers();
         if (allUsers === undefined || allUsers.length === 0)
@@ -65,7 +65,7 @@ router.route("/get-all").get(async (req, res) => {
 
 router.route("/others-role-name").get(async (req, res) => {
     return checkAdminTokenThenDoStuff(req, res, async function (decoded) {
-        console.log('passed the admin token check. decoded=' + JSON.stringify(decoded));
+        console.log('passed the admin token check');
 
         let othersId = req.query.others_id;
 

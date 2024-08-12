@@ -6,7 +6,7 @@ const fs = require('fs');
 
 
 router.post('/paypal-return', async (req, res) => {
-    console.log('PAYPAL RETURN!');
+    console.log('reached paypal return endpoint');
 });
 
 

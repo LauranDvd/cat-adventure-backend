@@ -64,15 +64,14 @@ const startUserRepository = () => {
                 'Authorization': `Bearer ${process.env.MANAGEMENT_API_TOKEN}`
             }
         };
-        console.log('config for axios: ' + JSON.stringify(config));
 
         return axios.request(config)
             .then((response) => {
-                console.log('in repository response: ' + JSON.stringify(response.data));
+                console.log('in repository response for getAll: ' + JSON.stringify(response.data));
                 return response.data;
             })
             .catch((error) => {
-                console.log("get all users auth0 error: " + JSON.stringify(error));
+                console.log("getAll users auth0 error: " + JSON.stringify(error));
             });
     }
 
@@ -155,12 +154,6 @@ const startUserRepository = () => {
         const updates = { $set: { userRole: roleId } };
         const appUsersCollection = await db.collection("AppUsers");
         await appUsersCollection.updateOne(query, updates);
-
-        // allCats = allCats.map(currentCat => {
-        //     if (currentCat.id === id)
-        //         return newCat;
-        //     return currentCat;
-        // });
     }
 
     const updateName = async (id, newName) => {
@@ -213,7 +206,6 @@ const startUserRepository = () => {
     const getByIdAuth0 = async (wantedId) => {
         const allUsers = await getAll();
         return (allUsers.filter(user => {
-            // console.log(`id of compared user is: ${user.identities[0].user_id}`);
             return user.identities[0].user_id === wantedId;
         }))[0];
     }
@@ -251,7 +243,6 @@ const startUserRepository = () => {
                 {
                     $project: {
                         _id: 0,
-                        // userName: "$user.name",
                         userName: "$user.id",
                         totalCuteness: 1
                     }

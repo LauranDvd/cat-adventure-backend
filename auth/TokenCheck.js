@@ -12,13 +12,10 @@ const checkTokenThenDoStuff = (req, res, toBeDone) => {
     }
     let token = authHeader.split(' ')[1];
 
-    console.log('token: ' + token);
-
     var certificate = fs.readFileSync('routes/key.pem'); // TODO move the key
 
     jwt.verify(token, certificate, { algorithms: ['RS256'] }, async function (err, decoded) {
         console.log('error: ' + err);
-        console.log('decoded: ' + JSON.stringify(decoded));
 
         if (decoded === undefined || decoded.sub.substring(0, 6) !== "auth0|") {
             console.log('bad token...');

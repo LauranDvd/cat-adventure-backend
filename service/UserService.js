@@ -8,7 +8,6 @@ const startUserService = () => {
     const getUsersRoleName = async (id) => {
         let user = await getById(id);
         if (user === errorUser) {
-            // return -1;
             await addBasicUserInformation(id);
             user = await getById(id);
         }

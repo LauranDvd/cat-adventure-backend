@@ -4,7 +4,8 @@ const Piscina = require('piscina');
 
 const connectToDatabase = require("../database/DBConnection");
 
-const errorCat = { id: -1, name: "Error", age: -1, weight: -1, cuteness: -1, ownerId: -1 };
+const ERROR_CAT = { id: -1, name: "Error", age: -1, weight: -1, cuteness: -1, ownerId: -1 };
+const UNIVERSAL_CAT_PRICE = 10;
 
 const max = (a, b) => {
     return a >= b ? a : b;
@@ -33,10 +34,8 @@ const addRandomToysOnSeparateThread = (interval, bulkSize) => {
 
 const startCatRepository = (generateCatsInBackground = true) => {
     const getAll = async () => {
-        // console.log('entered getall...');
         const db = await connectToDatabase();
         let collection = await db.collection("Cats");
-        // console.log('got collection...');
         let results = await collection.find({})
             .toArray();
         results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
@@ -83,7 +82,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
             .toArray();
 
         if (results.length === 0) {
-            return errorCat;
+            return ERROR_CAT;
         }
 
         results = results.map(cat => (
@@ -141,12 +140,12 @@ const startCatRepository = (generateCatsInBackground = true) => {
         const userCollection = db.collection("AppUsers");
         const user = await userCollection.findOne({ id: userId });
 
-        if (!user || !user.money || user.money < 10) {
+        if (!user || !user.money || user.money < UNIVERSAL_CAT_PRICE) {
             console.log('User does not have enough money or does not exist.');
             return false;
         }
 
-        const newMoneyAmount = user.money - 10;
+        const newMoneyAmount = user.money - UNIVERSAL_CAT_PRICE;
         await userCollection.updateOne({ id: userId }, { $set: { money: newMoneyAmount } });
 
         const catCollection = db.collection("Cats");
@@ -257,11 +256,11 @@ const startCatRepository = (generateCatsInBackground = true) => {
         console.log(`repo setavatar params: ${JSON.stringify(avatarParameters)}`);
 
         const avatarUrl = `https://cat-avatars.vercel.app/api/cat?parts=\
-${avatarParameters.body},\
-${avatarParameters.fur},\
-${avatarParameters.eyes},\
-${avatarParameters.mouth},\
-${avatarParameters.accessory}`;
+            ${avatarParameters.body},\
+            ${avatarParameters.fur},\
+            ${avatarParameters.eyes},\
+            ${avatarParameters.mouth},\
+            ${avatarParameters.accessory}`;
         console.log(`repo avatarurl: ${avatarUrl}`);
 
         const db = await connectToDatabase();
@@ -285,7 +284,7 @@ ${avatarParameters.accessory}`;
 
         const result = await collection.aggregate(aggregationPipeline).toArray();
 
-        return result.length > 0 ? result[0] : errorCat;
+        return result.length > 0 ? result[0] : ERROR_CAT;
     }
 
     // addRandomCatsOnSeparateThread(0, 1000);
@@ -300,4 +299,4 @@ ${avatarParameters.accessory}`;
     };
 }
 
-module.exports = { startCatRepository, errorCat };
+module.exports = { startCatRepository, errorCat: ERROR_CAT };

@@ -9,7 +9,6 @@ const https = require("https");
 const fs = require("fs");
 
 dotenv.config();
-console.log("done dotenv config");
 
 // var indexRouter = require('./routes/index');
 var catsRouter = require('./routes/CatsApi');

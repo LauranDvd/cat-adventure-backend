@@ -11,7 +11,6 @@ const startToyService = () => {
     };
 
     const getToyCount = async () => {
-        console.log('daaa');
         return await getCount();
     }
 

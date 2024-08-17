@@ -1,13 +1,13 @@
 const request = require('supertest');
 const app = require('../../app');
 const { startToyService } = require('../../service/ToyService');
-const { checkManagerOrAdminTokenThenDoStuff, checkTokenThenDoStuff } = require('../../auth/TokenCheck');
+const { checkManagerOrAdminTokenThenExecute, checkTokenThenExecute } = require('../../auth/TokenCheck');
 
 jest.mock('../../auth/TokenCheck', () => ({
-    checkManagerOrAdminTokenThenDoStuff: jest.fn((req, res, toBeDone) => {
+    checkManagerOrAdminTokenThenExecute: jest.fn((req, res, toBeDone) => {
         toBeDone({ sub: 'auth0|mockedToken' });
     }),
-    checkTokenThenDoStuff: jest.fn((req, res, toBeDone) => {
+    checkTokenThenExecute: jest.fn((req, res, toBeDone) => {
         toBeDone({ sub: 'auth0|mockedToken' });
     })
 }));

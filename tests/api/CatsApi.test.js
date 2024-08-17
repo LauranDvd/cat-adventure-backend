@@ -1,13 +1,13 @@
 const request = require('supertest');
 const app = require('../../app');
 const { startCatService } = require('../../service/CatService');
-const { checkManagerOrAdminTokenThenDoStuff, checkTokenThenDoStuff } = require('../../auth/TokenCheck');
+const { checkManagerOrAdminTokenThenExecute, checkTokenThenExecute } = require('../../auth/TokenCheck');
 
 jest.mock('../../auth/TokenCheck', () => ({
-    checkManagerOrAdminTokenThenDoStuff: jest.fn((req, res, toBeDone) => {
+    checkManagerOrAdminTokenThenExecute: jest.fn((req, res, toBeDone) => {
         toBeDone({ sub: 'auth0|mockedToken' });
     }),
-    checkTokenThenDoStuff: jest.fn((req, res, toBeDone) => {
+    checkTokenThenExecute: jest.fn((req, res, toBeDone) => {
         toBeDone({ sub: 'auth0|mockedToken' });
     })
 }));
@@ -74,7 +74,7 @@ describe('Cat API Tests', () => {
     });
 
     test('POST /cats fails if no manager/admin token', async () => {
-        checkManagerOrAdminTokenThenDoStuff.mockImplementationOnce((req, res, toBeDone) => {
+        checkManagerOrAdminTokenThenExecute.mockImplementationOnce((req, res, toBeDone) => {
             return res.status(401).json({ error: 'Authorization header is missing' });
         });
 
@@ -131,7 +131,7 @@ describe('Cat API Tests', () => {
     });
 
     test('PUT /:id fails if no manager/admin token', async () => {
-        checkManagerOrAdminTokenThenDoStuff.mockImplementationOnce((req, res, toBeDone) => {
+        checkManagerOrAdminTokenThenExecute.mockImplementationOnce((req, res, toBeDone) => {
             return res.status(401).json({ error: 'Authorization header is missing' });
         });
 
@@ -170,7 +170,7 @@ describe('Cat API Tests', () => {
     });
 
     test('DELETE /:id fails if no manager/admin token', async () => {
-        checkManagerOrAdminTokenThenDoStuff.mockImplementationOnce((req, res, toBeDone) => {
+        checkManagerOrAdminTokenThenExecute.mockImplementationOnce((req, res, toBeDone) => {
             return res.status(401).json({ error: 'Authorization header is missing' });
         });
 
@@ -195,7 +195,7 @@ describe('Cat API Tests', () => {
     });
 
     test("GET users-favorite-breed should fail if no token", async () => {
-        checkTokenThenDoStuff.mockImplementationOnce((req, res, toBeDone) => {
+        checkTokenThenExecute.mockImplementationOnce((req, res, toBeDone) => {
             return res.status(401).json({ error: 'Authorization header is missing' });
         });
 

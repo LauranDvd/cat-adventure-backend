@@ -2,6 +2,8 @@ const connectToDatabase = require("../database/DBConnection");
 const axios = require('axios');
 
 const errorUser = { id: -1, favoriteBreed: "Error", userRole: -1, money: -1 };
+const NEW_PLAYER_MONEY_AMOUNT = 50;
+const ERROR_STRING = "error";
 
 const startUserRepository = () => {
     const getAllInDatabase = async () => {
@@ -187,7 +189,7 @@ const startUserRepository = () => {
     const addBasicUserInformation = async (id) => {
         const db = await connectToDatabase();
         let collection = await db.collection("AppUsers");
-        const userForDb = { id: id, favoriteBreed: "", userRole: 1, money: 50 };
+        const userForDb = { id: id, favoriteBreed: "", userRole: 1, money: NEW_PLAYER_MONEY_AMOUNT };
         await collection.insertOne(userForDb);
     }
 
@@ -261,10 +263,10 @@ const startUserRepository = () => {
                 const user = (allUsersAuth0.filter(testedUser => {
                     return testedUser.identities[0].user_id === entry.userName;
                 }))[0];
-                console.log(`leaderboard - get by id auth0 user: ${JSON.stringify(user)}`);
-                entry.userName = user.name || "error";
+                console.log(`leaderboard - auth0 user: ${JSON.stringify(user)}`);
+                entry.userName = user.name || ERROR_STRING;
             }
-            console.log(`repo leaderboard: ${JSON.stringify(leaderboard)}`);
+            console.log(`repository leaderboard: ${JSON.stringify(leaderboard)}`);
 
             return leaderboard;
         } catch (error) {

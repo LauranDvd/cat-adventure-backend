@@ -1,9 +1,7 @@
 var express = require('express');
 const { startCatService } = require('../service/CatService');
 var router = express.Router();
-var jwt = require('jsonwebtoken');
-const fs = require('fs');
-const { checkTokenThenDoStuff, checkManagerOrAdminTokenThenDoStuff } = require('../auth/TokenCheck');
+const { checkTokenThenExecute, checkManagerOrAdminTokenThenExecute } = require('../auth/TokenCheck');
 const { OpenAI } = require("openai");
 
 const openai = new OpenAI();
@@ -11,8 +9,22 @@ const openai = new OpenAI();
 const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat, deleteCat, getToysPerCat, getUsersFavoriteBreed,
   getCatAgeDistribution, getMyCats, buyCatById, setAvatar, getMyCutest } = startCatService();
 
+const ERROR_CAT_ID = -1;
+const AUTH0_USER_ID_PREFIX_LENGTH = 6;
+const GENERATE_QUIZ_OPENAI_PROMPT = `Generate a quiz about cats with 10 multiple-choice questions.\n
+  Write it as a JSON array. Send the JSON directly, don't write anything else. Each question has 3 fields:\n
+  a. "question": the question itself\n
+  b. "options": list with the options\n
+  c. "answer": the correct option (should be one of the options)\n
+  The form should be something like this, but with 10 questions, not 2:\n
+  [
+    { question: "The first question", options: ["option 1", "option 2", "option 3"], answer: "option 2" },
+    { question: "The second question", options: ["option 2.1", "option 2.2", "option 2.3"], answer: "option 2.3" }
+]`;
+const OPENAI_MODEL = "gpt-3.5-turbo";
+
 const validateCat = (cat) => {
-  if (!cat.hasOwnProperty("name") || !cat.hasOwnProperty("age") || !cat.hasOwnProperty("weight"))
+  if (!catHasTheRequiredProperties(cat))
     return false;
   if (cat.name.length == 0)
     return false;
@@ -24,16 +36,20 @@ const validateCat = (cat) => {
   return true;
 }
 
-router.get('/count', async (req, res, next) => {
+const catHasTheRequiredProperties = (cat) => {
+  return cat.hasOwnProperty("name") && cat.hasOwnProperty("age") && cat.hasOwnProperty("weight");
+}
+
+router.get('/count', async (_req, res, _next) => {
   res.status(200).json({ count: await getCatCount() });
 })
 
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res, _next) => {
   let sortByNameDirection = req.query.sortByNameDirection;
   let pageNumber = req.query.page;
 
   const result = await getAllCatsSortedAndPaginated(sortByNameDirection, pageNumber);
-  console.log('api result: ' + JSON.stringify(result));
+  console.log('api get / result: ' + JSON.stringify(result));
   res.status(200).json(result);
 });
 
@@ -42,7 +58,7 @@ router.route("/get-by-id/:id").get(async (req, res) => {
 
   const cat = await getCatById(givenId);
 
-  if (cat.id === -1) {
+  if (cat.id === ERROR_CAT_ID) {
     return res.status(404).json({ error: `No cat with id ${givenId}` });
   }
 
@@ -50,32 +66,34 @@ router.route("/get-by-id/:id").get(async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  checkManagerOrAdminTokenThenDoStuff(req, res, function (decoded) {
+  checkManagerOrAdminTokenThenExecute(req, res, function (_decoded) {
     let givenCat = req.body;
 
     if (!validateCat(givenCat))
       return res.status(400).json({ error: `Cat has an invalid form` });
 
-    if (addCat(givenCat))
+    if (addCat(givenCat)) {
       return res.json({ message: "Successfully added the cat" });
-    else
+    }
+    else {
       return res.status(400).json({ error: `Cat is not valid` });
+    }
   });
 });
 
 router.route("/:id").put(async (req, res) => {
-  checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
+  checkManagerOrAdminTokenThenExecute(req, res, async function (_decoded) {
     let givenId = parseInt(req.params.id);
     const givenCat = req.body;
 
-    if (!validateCat(givenCat))
+    if (!validateCat(givenCat)) {
       return res.status(400).json({ error: `Cat has an invalid form` });
-
+    }
     const currentCat = await getCatById(givenId);
-    if (currentCat.id === -1) {
+    if (currentCat.id === ERROR_CAT_ID) {
       return res.status(404).json({ error: `No cat with id ${givenId}` });
     }
-    console.log(`in updateById, getById returned: ${JSON.stringify(currentCat)}`);
+    console.log(`in update, get returned: ${JSON.stringify(currentCat)}`);
 
     let successful = await updateCat(
       givenId,
@@ -85,36 +103,40 @@ router.route("/:id").put(async (req, res) => {
       }
     );
 
-    if (successful)
+    if (successful) {
       return res.json({ message: "Successfully updated the cat" });
-    else
+    }
+    else {
       return res.status(400).json({ error: `Cat is not valid` });
+    }
   });
 });
 
 router.route("/:id").delete(async (req, res) => {
-  checkManagerOrAdminTokenThenDoStuff(req, res, async function (decoded) {
+  checkManagerOrAdminTokenThenExecute(req, res, async function (_decoded) {
     let givenId = parseInt(req.params.id);
 
-    if (getCatById(givenId).id === -1) {
+    if (getCatById(givenId).id === ERROR_CAT_ID) {
       return res.status(404).json({ error: `No cat with id ${givenId}` });
     }
 
-    if (await deleteCat(givenId) === true)
+    if (await deleteCat(givenId)) {
       return res.status(200).json({ message: "Successfully deleted the cat" });
-    else
+    }
+    else {
       return res.status(400).json({ message: "Cannot delete the cat" });
+    }
   });
 });
 
 router.route("/users-favorite-breed").get(async (req, res) => {
-  checkTokenThenDoStuff(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(6, decoded.sub.length);
+  checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
 
     const breed = await getUsersFavoriteBreed(userId);
 
     if (breed === "") {
-      return res.status(404).json({ error: `User doesnt exist or have favorite breed` });
+      return res.status(404).json({ error: `User does not exist or have favorite breed` });
     }
 
     res.status(200).json(breed);
@@ -122,41 +144,43 @@ router.route("/users-favorite-breed").get(async (req, res) => {
 });
 
 router.route("/mine").get(async (req, res) => {
-  return checkTokenThenDoStuff(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(6, decoded.sub.length);
+  return checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
 
     const myCats = await getMyCats(userId);
-    console.log('mine passed token check! mycats=' + JSON.stringify(myCats));
+    console.log('api - my cats: ' + JSON.stringify(myCats));
 
-    if (myCats === undefined)
+    if (myCats === undefined) {
       return res.status(400);
+    }
     return res.status(200).json(myCats);
   })
-})
+});
 
 router.route("/toys_per_cat").get(async (req, res) => {
   let count = req.query.count;
 
-  const result = await getToysPerCat(count);
-  res.status(200).json(result);
+  const toysPerCat = await getToysPerCat(count);
+  res.status(200).json(toysPerCat);
 });
 
-
-router.get('/age-distribution', async (req, res, next) => {
-  const result = await getCatAgeDistribution();
-  console.log('api result: ' + JSON.stringify(result));
-  res.status(200).json(result);
+router.get('/age-distribution', async (_req, res, _next) => {
+  const ageDistribution = await getCatAgeDistribution();
+  console.log('api age distribution: ' + JSON.stringify(ageDistribution));
+  res.status(200).json(ageDistribution);
 });
 
 router.post("/buy", async (req, res) => {
-  checkTokenThenDoStuff(req, res, function (decoded) {
+  checkTokenThenExecute(req, res, function (decoded) {
     let catId = req.body.catId;
-    let userId = decoded.sub.substring(6, decoded.sub.length);
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
 
-    if (buyCatById(catId, userId))
+    if (buyCatById(catId, userId)) {
       return res.json({ message: "Successfully bought the cat" });
-    else
+    }
+    else {
       return res.status(400).json({ error: `Could not buy the cat` });
+    }
   });
 });
 
@@ -165,88 +189,75 @@ router.route("/update-cuteness/:id").put(async (req, res) => {
   const newCuteness = req.body.newCuteness;
 
   const cat = await getCatById(catId);
-  if (cat.id === -1) {
+  if (cat.id === ERROR_CAT_ID) {
     return res.status(404).json({ error: `No cat with id ${catId}` });
   }
 
-  let successful = await updateCat(
+  let wasSuccessful = await updateCat(
     catId,
     { id: catId, name: cat.name, age: cat.age, weight: cat.weight, cuteness: newCuteness, ownerId: cat.ownerId }
   );
-  console.log('update cuteness successful: ' + successful);
+  console.log('update cuteness successfulness: ' + wasSuccessful);
 
-  // return res.status(200);
-
-  if (successful)
+  if (wasSuccessful) {
     return res.json({ message: "Successfully updated the cat" });
-  else
+  }
+  else {
     return res.status(400).json({ error: `Cat is not valid` });
+  }
 });
 
-router.route("/quiz-questions").post(async (req, res) => {
-  const prompt = `Generate a quiz about cats with 10 multiple-choice questions.\n
-  Write it as a JSON array. Send the JSON directly, don't write anything else. Each question has 3 fields:\n
-  a. "question": the question itself\n
-  b. "options": list with the options\n
-  c. "answer": the correct option (should be one of the options)\n
-  The form should be something like this, but with 10 questions, not 2:\n
-  [
-    { question: "The first question", options: ["option 1", "option 2", "option 3"], answer: "option 2" },
-    { question: "The second question", options: ["option 2.1", "option 2.2", "option 2.3"], answer: "option 2.3" }
-]`;
-
-  // return res.status(200).json([]);
+router.route("/quiz-questions").post(async (_req, res) => {
   const completion = await openai.chat.completions.create({
-    messages: [{ role: "system", content: prompt }],
-    model: "gpt-3.5-turbo",
+    messages: [{ role: "system", content: GENERATE_QUIZ_OPENAI_PROMPT }],
+    model: OPENAI_MODEL,
   });
 
   const responseQuiz = completion.choices[0].message.content;
 
-  console.log('some completion: ' + responseQuiz);
+  console.log('generated quiz: ' + responseQuiz);
   return res.status(200).json(JSON.parse(responseQuiz));
 });
 
 router.route("/set-avatar").post(async (req, res) => {
-  checkTokenThenDoStuff(req, res, async function (decoded) {
-    console.log(`catsapi setavatar`);
+  checkTokenThenExecute(req, res, async function (decoded) {
+    console.log(`entered api - set avatar`);
 
     const catId = req.body.catId;
     const prompt = req.body.prompt;
-    let userId = decoded.sub.substring(6, decoded.sub.length);
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
 
     const cat = await getCatById(catId);
-    if (cat.id === -1) {
+    if (cat.id === ERROR_CAT_ID) {
       return res.status(404).json({ error: `No cat with id ${catId}` });
     }
     if (cat.ownerId !== userId) {
       return res.status(401).json({ error: `Not your cat` });
     }
 
-    let successful = await setAvatar(
-      catId,
-      prompt
-    );
+    let wasSuccessful = await setAvatar(catId, prompt);
 
-    if (successful)
+    if (wasSuccessful) {
       return res.json({ message: "Successfully set avatar" });
-    else
+    }
+    else {
       return res.status(400).json({ error: `Couldnt set avatar` });
+    }
   });
 });
 
 router.route("/my-cutest").get(async (req, res) => {
-  console.log('my cutest will do token check!');
-  return checkTokenThenDoStuff(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(6, decoded.sub.length);
+  return checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
 
     const myCutest = await getMyCutest(userId);
-    console.log('my cutest passed token check! my cutest=' + JSON.stringify(myCutest));
+    console.log('api - my cutest: ' + JSON.stringify(myCutest));
 
-    if (myCutest === undefined)
+    if (myCutest === undefined) {
       return res.status(400);
+    }
     return res.status(200).json(myCutest);
   })
-})
+});
 
 module.exports = router;

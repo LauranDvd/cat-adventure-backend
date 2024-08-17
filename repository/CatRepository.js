@@ -255,12 +255,13 @@ const startCatRepository = (generateCatsInBackground = true) => {
 
         console.log(`repo setavatar params: ${JSON.stringify(avatarParameters)}`);
 
-        const avatarUrl = `https://cat-avatars.vercel.app/api/cat?parts=\
-            ${avatarParameters.body},\
-            ${avatarParameters.fur},\
-            ${avatarParameters.eyes},\
-            ${avatarParameters.mouth},\
-            ${avatarParameters.accessory}`;
+        const avatarUrl = createAvatarUrl(
+            avatarParameters.body,
+            avatarParameters.fur,
+            avatarParameters.eyes,
+            avatarParameters.mouth,
+            avatarParameters.accessory
+        );
         console.log(`repo avatarurl: ${avatarUrl}`);
 
         const db = await connectToDatabase();
@@ -270,6 +271,15 @@ const startCatRepository = (generateCatsInBackground = true) => {
         await collection.updateOne(findQuery, updates);
 
         return true;
+    }
+
+    const createAvatarUrl = (body, fur, eyes, mouth, accessory) => {
+        return `https://cat-avatars.vercel.app/api/cat?parts=\
+            ${body},\
+            ${fur},\
+            ${eyes},\
+            ${mouth},\
+            ${accessory}`;
     }
 
     const getCutestCatOfUser = async (userId) => {

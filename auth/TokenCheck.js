@@ -5,7 +5,7 @@ const { startUserRepository } = require('../repository/UserRepository');
 
 const { isUserAdminOrManager, isUserAdmin } = startUserRepository();
 
-const checkTokenThenDoStuff = (req, res, toBeDone) => {
+const checkTokenThenExecute = (req, res, toBeExecuted) => {
     let authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'Authorization header is missing' });
@@ -22,25 +22,25 @@ const checkTokenThenDoStuff = (req, res, toBeDone) => {
 
             return res.status(401).json({ error: `Bad token!!` });
         } else {
-            return toBeDone(decoded);
+            return toBeExecuted(decoded);
         }
     });
 }
 
-const checkManagerOrAdminTokenThenDoStuff = (req, res, toBeDone) => {
-    checkTokenThenDoStuff(req, res, async function (decoded) {
+const checkManagerOrAdminTokenThenExecute = (req, res, toBeExecuted) => {
+    checkTokenThenExecute(req, res, async function (decoded) {
         if (await isUserAdminOrManager(decoded.sub.substring(6, decoded.sub.length)) === true) {
-            return toBeDone(decoded);
+            return toBeExecuted(decoded);
         } else {
             return res.status(401).json({ error: `Only managers and admins can do this` });
         }
     })
 }
 
-const checkAdminTokenThenDoStuff = (req, res, toBeDone) => {
-    checkTokenThenDoStuff(req, res, async function (decoded) {
+const checkAdminTokenThenExecute = (req, res, toBeExecuted) => {
+    checkTokenThenExecute(req, res, async function (decoded) {
         if (await isUserAdmin(decoded.sub.substring(6, decoded.sub.length)) === true) {
-            return toBeDone(decoded);
+            return toBeExecuted(decoded);
         } else {
             return res.status(401).json({ error: `Only admins can do this` });
         }
@@ -48,4 +48,4 @@ const checkAdminTokenThenDoStuff = (req, res, toBeDone) => {
 }
 
 
-module.exports = { checkTokenThenDoStuff, checkManagerOrAdminTokenThenDoStuff, checkAdminTokenThenDoStuff };
+module.exports = { checkTokenThenExecute: checkTokenThenExecute, checkManagerOrAdminTokenThenExecute: checkManagerOrAdminTokenThenExecute, checkAdminTokenThenExecute: checkAdminTokenThenExecute };

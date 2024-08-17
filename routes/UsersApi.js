@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const { startUserService } = require('../service/UserService');
 const { checkTokenThenExecute, checkAdminTokenThenExecute } = require('../auth/TokenCheck');
+const { AUTH0_USER_ID_PREFIX_LENGTH } = require('../utils/Constants');
 
 const { getUsersRoleName, getAllUsers, addUser, deleteUser, updateUserRole, updateUserName, getUsersMoney, processBoughtMoney, getLeaderboard } =
     startUserService();
@@ -10,7 +11,6 @@ const userJsonProperties = ["name", "email", "password", "role"];
 const REGULAR_USER_ROLE_NAME = "Regular User";
 const MANAGER_ROLE_NAME = "Manager";
 const ADMIN_ROLE_NAME = "Admin";
-const AUTH0_USER_ID_PREFIX_LENGTH = 6;
 const ERROR_MONEY_AMOUNT = -1;
 
 const validateUser = (user) => {

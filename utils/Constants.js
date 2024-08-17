@@ -1,0 +1,27 @@
+const ERROR_USER = { id: -1, favoriteBreed: "Error", userRole: -1, money: -1 };
+const ERROR_STRING = "error";
+const ERROR_CAT = { id: -1, name: "Error", age: -1, weight: -1, cuteness: -1, ownerId: -1 };
+const ERROR_TOY = { id: -1, name: "Error", catId: -1 };
+
+const UNIVERSAL_CAT_PRICE = 10;
+const NEW_PLAYER_MONEY_AMOUNT = 50;
+
+const REGULAR_USER_ROLE = "Regular User";
+const MANAGER_USER_ROLE = "Manager";
+const ADMIN_USER_ROLE = "Admin";
+const REGULAR_USER_ROLE_ID = 1;
+
+const AUTH0_USER_ID_PREFIX_LENGTH = 6;
+
+const CATS_MONGO_COLLECTION_NAME = "Cats";
+const TOYS_MONGO_COLLECTION_NAME = "Toys";
+const USERS_MONGO_COLLECTION_NAME = "AppUsers";
+const USER_ROLES_MONGO_COLLECTION_NAME = "UserRoles";
+
+
+
+module.exports = {
+    NEW_PLAYER_MONEY_AMOUNT, ERROR_USER, ERROR_STRING, AUTH0_USER_ID_PREFIX_LENGTH,
+    CATS_MONGO_COLLECTION_NAME, TOYS_MONGO_COLLECTION_NAME, USERS_MONGO_COLLECTION_NAME, USER_ROLES_MONGO_COLLECTION_NAME,
+    ERROR_CAT, UNIVERSAL_CAT_PRICE, ERROR_TOY, REGULAR_USER_ROLE, MANAGER_USER_ROLE, ADMIN_USER_ROLE, REGULAR_USER_ROLE_ID
+};

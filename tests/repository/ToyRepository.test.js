@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
 const connectToDatabase = require('../../database/DBConnection');
-const { startToyRepository, errorToy } = require('../../repository/ToyRepository');
+const { startToyRepository } = require('../../repository/ToyRepository');
+const { TOYS_MONGO_COLLECTION_NAME, ERROR_TOY } = require('../../utils/Constants');
 
 jest.mock('../../database/DBConnection');
 
@@ -23,7 +24,7 @@ describe('ToyRepository', () => {
 
         connectToDatabase.mockResolvedValue(db);
 
-        db.collection("Toys").insertMany(allToys);
+        db.collection(TOYS_MONGO_COLLECTION_NAME).insertMany(allToys);
     });
 
     afterAll(async () => {
@@ -59,7 +60,7 @@ describe('ToyRepository', () => {
 
         const toy = await repository.getById(100);
 
-        expect(toy).toEqual(errorToy);
+        expect(toy).toEqual(ERROR_TOY);
     });
 
     it('add adds toy', async () => {

@@ -4,8 +4,7 @@ const Piscina = require('piscina');
 
 const connectToDatabase = require("../database/DBConnection");
 
-const ERROR_CAT = { id: -1, name: "Error", age: -1, weight: -1, cuteness: -1, ownerId: -1 };
-const UNIVERSAL_CAT_PRICE = 10;
+const { CATS_MONGO_COLLECTION_NAME, TOYS_MONGO_COLLECTION_NAME, USERS_MONGO_COLLECTION_NAME, ERROR_CAT, UNIVERSAL_CAT_PRICE } = require("../utils/Constants");
 
 const max = (a, b) => {
     return a >= b ? a : b;
@@ -35,7 +34,7 @@ const addRandomToysOnSeparateThread = (interval, bulkSize) => {
 const startCatRepository = (generateCatsInBackground = true) => {
     const getAll = async () => {
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         let results = await collection.find({})
             .toArray();
         results = results.map(cat => ({ id: cat.id, name: cat.name, age: cat.age, weight: cat.weight }));
@@ -44,10 +43,10 @@ const startCatRepository = (generateCatsInBackground = true) => {
     };
 
     const getAllSortedPaginated = async (sortByNameDirection, firstEntryNumber, lastEntryNumber) => {
-        console.log('repo: first, last=' + firstEntryNumber + ", " + lastEntryNumber);
+        console.log('repo getAll: first, last=' + firstEntryNumber + ", " + lastEntryNumber);
 
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         let results = await collection.find({})
             .sort({ name: sortByNameDirection })
             .skip(firstEntryNumber - 1)
@@ -60,24 +59,15 @@ const startCatRepository = (generateCatsInBackground = true) => {
         return results;
     }
 
-    // const getAllToys = async () => {
-    //     const db = await connectToDatabase();
-    //     let collection = await db.collection("Toys");
-    //     let results = await collection.find({})
-    //         .toArray();
-    //     results = results.map(toy => ({ id: toy.id, catId: toy.catId, name: toy.name }));
-    //     return results;
-    // };
-
     const getCount = async () => {
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         return collection.count();
     }
 
     const getById = async (id) => {
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         let results = await collection.find({ id: id })
             .toArray();
 
@@ -96,7 +86,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
 
     const add = async ({ name, age, weight, cuteness, ownerId }) => {
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
 
         let maximumId = (await collection.find({}).sort({ id: -1 }).limit(1).toArray())[0].id;
         console.log('maximum id in Cats: ' + JSON.stringify(maximumId));
@@ -112,13 +102,13 @@ const startCatRepository = (generateCatsInBackground = true) => {
     const deleteById = async (id) => {
         const db = await connectToDatabase();
 
-        if (await db.collection("Toys").findOne({ catId: id }) !== null) {
-            console.log('didn\'t delete cat because it has toys');
+        if (await db.collection(TOYS_MONGO_COLLECTION_NAME).findOne({ catId: id }) !== null) {
+            console.log(`did not delete cat because it had toys`);
             return false;
         }
 
         const query = { id: id };
-        const collection = db.collection("Cats");
+        const collection = db.collection(CATS_MONGO_COLLECTION_NAME);
         await collection.deleteOne(query);
 
         return true;
@@ -130,14 +120,14 @@ const startCatRepository = (generateCatsInBackground = true) => {
         const db = await connectToDatabase();
         const query = { id: id };
         const updates = { $set: newCat };
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         await collection.updateOne(query, updates);
     }
 
     const buy = async (catId, userId) => {
         const db = await connectToDatabase();
 
-        const userCollection = db.collection("AppUsers");
+        const userCollection = db.collection(USERS_MONGO_COLLECTION_NAME);
         const user = await userCollection.findOne({ id: userId });
 
         if (!user || !user.money || user.money < UNIVERSAL_CAT_PRICE) {
@@ -148,7 +138,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
         const newMoneyAmount = user.money - UNIVERSAL_CAT_PRICE;
         await userCollection.updateOne({ id: userId }, { $set: { money: newMoneyAmount } });
 
-        const catCollection = db.collection("Cats");
+        const catCollection = db.collection(CATS_MONGO_COLLECTION_NAME);
         await catCollection.updateOne({ id: catId }, { $set: { ownerId: userId } });
 
         return true;
@@ -168,7 +158,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
             },
             {
                 $lookup: {
-                    from: "Cats",
+                    from: CATS_MONGO_COLLECTION_NAME,
                     localField: "_id",
                     foreignField: "id",
                     as: "cat"
@@ -194,14 +184,14 @@ const startCatRepository = (generateCatsInBackground = true) => {
             }
         ];
 
-        const results = await db.collection("Toys").aggregate(catToysAggregation).toArray();
+        const results = await db.collection(TOYS_MONGO_COLLECTION_NAME).aggregate(catToysAggregation).toArray();
 
         return results;
     }
 
     const getUsersFavoriteBreedById = async (userId) => {
         const db = await connectToDatabase();
-        const user = (await db.collection("AppUsers").find({ id: userId }).toArray())[0];
+        const user = (await db.collection(USERS_MONGO_COLLECTION_NAME).find({ id: userId }).toArray())[0];
         if (user === undefined)
             return "";
         const breed = user.favoriteBreed;
@@ -210,7 +200,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
 
     const getUsersCatsById = async (userId) => {
         const db = await connectToDatabase();
-        let collection = await db.collection("Cats");
+        let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         let results = await collection.find({ ownerId: userId }).toArray();
 
         results = results.map(cat => ({
@@ -245,7 +235,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
             }
         ];
 
-        const results = await db.collection("Cats").aggregate(ageDistributionAggregation).toArray();
+        const results = await db.collection(CATS_MONGO_COLLECTION_NAME).aggregate(ageDistributionAggregation).toArray();
 
         return results;
     }
@@ -267,7 +257,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
         const db = await connectToDatabase();
         const findQuery = { id: catId };
         const updates = { $set: { avatarUrl: avatarUrl } };
-        const collection = await db.collection("Cats");
+        const collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
         await collection.updateOne(findQuery, updates);
 
         return true;
@@ -284,7 +274,7 @@ const startCatRepository = (generateCatsInBackground = true) => {
 
     const getCutestCatOfUser = async (userId) => {
         const db = await connectToDatabase();
-        const collection = db.collection("Cats");
+        const collection = db.collection(CATS_MONGO_COLLECTION_NAME);
 
         const aggregationPipeline = [
             { $match: { ownerId: userId } },
@@ -309,4 +299,4 @@ const startCatRepository = (generateCatsInBackground = true) => {
     };
 }
 
-module.exports = { startCatRepository, errorCat: ERROR_CAT };
+module.exports = { startCatRepository };

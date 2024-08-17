@@ -1,4 +1,5 @@
-const { startUserRepository, errorUser } = require('../repository/UserRepository');
+const { startUserRepository } = require('../repository/UserRepository');
+const { NEW_PLAYER_MONEY_AMOUNT, ERROR_USER } = require('../utils/Constants');
 
 
 const startUserService = () => {
@@ -7,20 +8,20 @@ const startUserService = () => {
 
     const getUsersRoleName = async (id) => {
         let user = await getById(id);
-        if (user === errorUser) {
+        if (user === ERROR_USER) {
             await addBasicUserInformation(id);
             user = await getById(id);
         }
 
         let rolesName = await getRolesName(user.userRole);
-        console.log('getusersrolename will return ' + rolesName);
+        console.log('service: getusersrolename will return ' + rolesName);
 
         return rolesName;
     }
 
     const getUsersMoney = async (id) => {
         let user = await getById(id);
-        if (user === errorUser) {
+        if (user === ERROR_USER) {
             await addBasicUserInformation(id);
             user = await getById(id);
         }
@@ -57,7 +58,7 @@ const startUserService = () => {
     }
 
     const processBoughtMoney = (userId) => {
-        addMoney(userId, 50);
+        addMoney(userId, NEW_PLAYER_MONEY_AMOUNT);
         return true;
     }
 

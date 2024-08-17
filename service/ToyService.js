@@ -1,4 +1,5 @@
-const { startToyRepository, errorToy } = require('../repository/ToyRepository');
+const { startToyRepository } = require('../repository/ToyRepository');
+const { ERROR_TOY } = require('../utils/Constants');
 
 
 const startToyService = () => {
@@ -16,7 +17,7 @@ const startToyService = () => {
 
     const getToyById = async (id) => {
         if (Number.isNaN(parseInt(id)))
-            return errorToy;
+            return ERROR_TOY;
 
         return await getById(parseInt(id));
     }

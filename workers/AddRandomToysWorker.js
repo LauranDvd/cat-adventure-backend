@@ -1,21 +1,19 @@
 const { faker } = require('@faker-js/faker');
 
 const connectToDatabase = require("../database/DBConnection");
+const { CATS_MONGO_COLLECTION_NAME, TOYS_MONGO_COLLECTION_NAME } = require('../utils/Constants');
 
 let toBeAdded = [];
 
 const getRandomCatIds = async (numberOfIds, catCollection) => {
     const randomCatIds = await catCollection.aggregate([{ $sample: { size: numberOfIds } }, {$project: {_id: 0, id: 1}}]).toArray();
-    // console.log('catids: ' + JSON.stringify(randomCatIds));
     return randomCatIds;
 }
 
 module.exports = async ({ interval, bulkSize }) => {
-    // console.log('started piscinas function');
-
     const db = await connectToDatabase();
-    let toyCollection = await db.collection("Toys");
-    let catCollection = await db.collection("Cats");
+    let toyCollection = await db.collection(TOYS_MONGO_COLLECTION_NAME);
+    let catCollection = await db.collection(CATS_MONGO_COLLECTION_NAME);
 
     const getRandomToyName = () => {
         return faker.vehicle.bicycle();
@@ -49,8 +47,6 @@ const processToBeAdded = async (toyCollection, catCollection) => {
     let nextId = parseInt(maximumToyId) + 1;
     let catIds = await getRandomCatIds(toBeAdded.length, catCollection);
     let catIdsIndex = 0;
-
-    // console.log('got max id: ' + JSON.stringify(maximumId));
 
     const newToys = toBeAdded.map(toy => ({
         id: nextId++,

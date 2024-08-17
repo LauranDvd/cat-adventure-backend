@@ -1,7 +1,7 @@
-var express = require('express');
 var jwt = require('jsonwebtoken');
 const fs = require('fs');
 const { startUserRepository } = require('../repository/UserRepository');
+const { AUTH0_USER_ID_PREFIX_LENGTH } = require('../utils/Constants');
 
 const { isUserAdminOrManager, isUserAdmin } = startUserRepository();
 
@@ -12,15 +12,15 @@ const checkTokenThenExecute = (req, res, toBeExecuted) => {
     }
     let token = authHeader.split(' ')[1];
 
-    var certificate = fs.readFileSync('routes/key.pem'); // TODO move the key
+    var certificate = fs.readFileSync('auth/key.pem');
 
     jwt.verify(token, certificate, { algorithms: ['RS256'] }, async function (err, decoded) {
         console.log('error: ' + err);
 
-        if (decoded === undefined || decoded.sub.substring(0, 6) !== "auth0|") {
-            console.log('bad token...');
+        if (decoded === undefined || decoded.sub.substring(0, AUTH0_USER_ID_PREFIX_LENGTH) !== "auth0|") {
+            console.log('bad token');
 
-            return res.status(401).json({ error: `Bad token!!` });
+            return res.status(401).json({ error: `Bad token` });
         } else {
             return toBeExecuted(decoded);
         }
@@ -29,7 +29,7 @@ const checkTokenThenExecute = (req, res, toBeExecuted) => {
 
 const checkManagerOrAdminTokenThenExecute = (req, res, toBeExecuted) => {
     checkTokenThenExecute(req, res, async function (decoded) {
-        if (await isUserAdminOrManager(decoded.sub.substring(6, decoded.sub.length)) === true) {
+        if (await isUserAdminOrManager(decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length))) {
             return toBeExecuted(decoded);
         } else {
             return res.status(401).json({ error: `Only managers and admins can do this` });
@@ -39,7 +39,7 @@ const checkManagerOrAdminTokenThenExecute = (req, res, toBeExecuted) => {
 
 const checkAdminTokenThenExecute = (req, res, toBeExecuted) => {
     checkTokenThenExecute(req, res, async function (decoded) {
-        if (await isUserAdmin(decoded.sub.substring(6, decoded.sub.length)) === true) {
+        if (await isUserAdmin(decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length))) {
             return toBeExecuted(decoded);
         } else {
             return res.status(401).json({ error: `Only admins can do this` });
@@ -48,4 +48,4 @@ const checkAdminTokenThenExecute = (req, res, toBeExecuted) => {
 }
 
 
-module.exports = { checkTokenThenExecute: checkTokenThenExecute, checkManagerOrAdminTokenThenExecute: checkManagerOrAdminTokenThenExecute, checkAdminTokenThenExecute: checkAdminTokenThenExecute };
+module.exports = { checkTokenThenExecute, checkManagerOrAdminTokenThenExecute, checkAdminTokenThenExecute };

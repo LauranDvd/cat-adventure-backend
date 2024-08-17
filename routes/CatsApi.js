@@ -3,6 +3,7 @@ const { startCatService } = require('../service/CatService');
 var router = express.Router();
 const { checkTokenThenExecute, checkManagerOrAdminTokenThenExecute } = require('../auth/TokenCheck');
 const { OpenAI } = require("openai");
+const { AUTH0_USER_ID_PREFIX_LENGTH } = require('../utils/Constants');
 
 const openai = new OpenAI();
 
@@ -10,7 +11,6 @@ const { getAllCatsSortedAndPaginated, getCatCount, getCatById, addCat, updateCat
   getCatAgeDistribution, getMyCats, buyCatById, setAvatar, getMyCutest } = startCatService();
 
 const ERROR_CAT_ID = -1;
-const AUTH0_USER_ID_PREFIX_LENGTH = 6;
 const GENERATE_QUIZ_OPENAI_PROMPT = `Generate a quiz about cats with 10 multiple-choice questions.\n
   Write it as a JSON array. Send the JSON directly, don't write anything else. Each question has 3 fields:\n
   a. "question": the question itself\n

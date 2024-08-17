@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
 const connectToDatabase = require('../../database/DBConnection');
-const { startUserRepository, errorUser } = require('../../repository/UserRepository');
+const { startUserRepository } = require('../../repository/UserRepository');
+const { ERROR_USER, USER_ROLES_MONGO_COLLECTION_NAME, USERS_MONGO_COLLECTION_NAME } = require('../../utils/Constants');
 
 jest.mock('../../database/DBConnection');
 
@@ -29,8 +30,8 @@ describe('UserRepository', () => {
 
         connectToDatabase.mockResolvedValue(db);
 
-        await db.collection("AppUsers").insertMany(allUsers);
-        await db.collection("UserRoles").insertMany(allRoles);
+        await db.collection(USERS_MONGO_COLLECTION_NAME).insertMany(allUsers);
+        await db.collection(USER_ROLES_MONGO_COLLECTION_NAME).insertMany(allRoles);
     });
 
     afterAll(async () => {
@@ -48,7 +49,7 @@ describe('UserRepository', () => {
     it('getById returns error user if no user with that id', async () => {
         const user = await repository.getById(100);
 
-        expect(user).toEqual(errorUser);
+        expect(user).toEqual(ERROR_USER);
     });
 
     // THESE FUNCTIONS SEND REQUESTS TO AUTH0

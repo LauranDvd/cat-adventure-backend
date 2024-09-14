@@ -154,7 +154,7 @@ const startCatService = () => {
     }
 
     const createGenerateAvatarOpenAiPrompt = (userPrompt) => {
-        return `I have a site called CatApp, where users buy cats and play with them. Users can set their cats' avatars, by inputting a prompt, which I send to you. What you have to do is to decide, based on their prompt, how the cat's avatar's body, fur, eyes, mouth, and accessory should look like.
+        return `I have a site called CatAdventure, where users buy cats and play with them. Users can set their cats' avatars, by inputting a prompt, which I send to you. What you have to do is to decide, based on their prompt, how the cat's avatar's body, fur, eyes, mouth, and accessory should look like.
             Hence, first I will give you the different types of body, fur, eyes, mouth, and accessory. Then, I will give you the user's prompt.
             You will have to give me one number for each part (body, fur, eyes, mouth, and accessory). Write it as a JSON, for example: {"body": 3, "fur": 2, "eyes": 8, "mouth": 4, "accessory": 5}. Only send the JSON, do not send anything else. Include quotation marks around the keys. 
 

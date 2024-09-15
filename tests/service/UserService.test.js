@@ -1,5 +1,6 @@
 const { startUserService } = require('../../service/UserService');
-const { startUserRepository, errorUser } = require('../../repository/UserRepository');
+const { startUserRepository } = require('../../repository/UserRepository');
+const { ERROR_USER } = require('../../utils/Constants');
 
 const mockUsers = [
     { id: 1, name: 'User 1', email: 'user1@example.com', password: 'password1', role: 'admin' },
@@ -12,7 +13,7 @@ jest.mock('../../repository/UserRepository');
 startUserRepository.mockReturnValue({
     getById: jest.fn().mockImplementation((id) => {
         const user = mockUsers.find(user => user.id === id);
-        return user ? user : errorUser;
+        return user ? user : ERROR_USER;
     }),
     getRolesName: jest.fn().mockResolvedValue('admin'),
     getAll: jest.fn().mockResolvedValue(mockUsers),

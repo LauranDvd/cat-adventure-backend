@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
 const connectToDatabase = require('../../database/DBConnection');
-const { startCatRepository, errorCat } = require('../../repository/CatRepository');
+const { startCatRepository } = require('../../repository/CatRepository');
+const { CATS_MONGO_COLLECTION_NAME, TOYS_MONGO_COLLECTION_NAME, ERROR_CAT } = require('../../utils/Constants');
 // const { it } = require('node:test');
 
 jest.mock('../../database/DBConnection');
@@ -24,8 +25,8 @@ describe('insert', () => {
 
         connectToDatabase.mockResolvedValue(db);
 
-        db.collection("Cats").insertMany(allCats);
-        db.collection("Toys").insertOne({
+        db.collection(CATS_MONGO_COLLECTION_NAME).insertMany(allCats);
+        db.collection(TOYS_MONGO_COLLECTION_NAME).insertOne({
             name: "some toy",
             catId: 1
         });
@@ -92,7 +93,7 @@ describe('insert', () => {
 
         const cat = await repository.getById(100);
 
-        expect(cat).toEqual(errorCat);
+        expect(cat).toEqual(ERROR_CAT);
     });
 
     it('add adds cat', async () => {

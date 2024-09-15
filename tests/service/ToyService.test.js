@@ -1,5 +1,6 @@
 const { startToyService } = require('../../service/ToyService');
-const { startToyRepository, errorToy } = require('../../repository/ToyRepository');
+const { startToyRepository } = require('../../repository/ToyRepository');
+const { ERROR_TOY } = require('../../utils/Constants');
 
 const mockToys = [
     { id: 1, name: 'Toy 1', catId: 1 },
@@ -16,7 +17,7 @@ startToyRepository.mockReturnValue({
     getCount: jest.fn().mockResolvedValue(mockToys.length),
     getById: jest.fn().mockImplementation((id) => {
         const toy = mockToys.find(toy => toy.id === id);
-        return toy ? toy : errorToy;
+        return toy ? toy : ERROR_TOY;
     }),
     add: jest.fn(),
     update: jest.fn(),
@@ -46,10 +47,10 @@ describe('getToyById', () => {
         expect(result).toEqual(mockToys[2]);
     });
 
-    it('returns errorToy if id is not a number', async () => {
+    it('returns error toy if id is not a number', async () => {
         const service = startToyService();
         const result = await service.getToyById("string");
-        expect(result).toEqual(errorToy);
+        expect(result).toEqual(ERROR_TOY);
     });
 });
 

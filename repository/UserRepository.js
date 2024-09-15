@@ -1,12 +1,18 @@
 const connectToDatabase = require("../database/DBConnection");
 const axios = require('axios');
+const { NEW_PLAYER_MONEY_AMOUNT, ERROR_USER, ERROR_STRING, CATS_MONGO_COLLECTION_NAME, USER_ROLES_MONGO_COLLECTION_NAME,
+    USERS_MONGO_COLLECTION_NAME,
+    MANAGER_USER_ROLE,
+    ADMIN_USER_ROLE,
+    AUTH0_USER_ID_PREFIX_LENGTH,
+    REGULAR_USER_ROLE_ID } = require("../utils/Constants");
 
-const errorUser = { id: -1, favoriteBreed: "Error", userRole: -1, money: -1 };
+const AUTH0_API_MAIN_ENDPOINT = 'https://dev-71pxajof3gt25bcw.us.auth0.com/api/v2/users';
 
 const startUserRepository = () => {
     const getAllInDatabase = async () => {
         const db = await connectToDatabase();
-        let collection = await db.collection("AppUsers");
+        let collection = await db.collection(USERS_MONGO_COLLECTION_NAME);
         let results = await collection.find({})
             .toArray();
         results = results.map(user => ({ id: user.id, favoriteBreed: user.favoriteBreed, userRole: user.userRole, money: user.money }));
@@ -15,23 +21,23 @@ const startUserRepository = () => {
 
     const getById = async (id) => {
         const allUsers = await getAllInDatabase();
-        console.log('allusers: ' + JSON.stringify(allUsers));
-        console.log('id parameter: ' + JSON.stringify(id));
+        console.log('all users: ' + JSON.stringify(allUsers));
+        console.log('get by id - id parameter: ' + JSON.stringify(id));
         const user = allUsers.find(user => user.id === id);
         if (user !== undefined)
             return user;
-        return errorUser;
+        return ERROR_USER;
     }
 
     const getRolesName = async (roleId) => {
         const db = await connectToDatabase();
-        let userRoles = await db.collection("UserRoles");
+        let userRoles = await db.collection(USER_ROLES_MONGO_COLLECTION_NAME);
         let filteredUserRoles = await userRoles.find({ roleId: roleId })
             .toArray();
 
         if (filteredUserRoles[0])
             return filteredUserRoles[0].roleName;
-        return "error";
+        return ERROR_STRING;
     }
 
     const isUserAdminOrManager = async (userId) => {
@@ -39,9 +45,9 @@ const startUserRepository = () => {
         const usersRoleId = user.userRole;
         const usersRoleName = await getRolesName(usersRoleId);
 
-        console.log('isuseradminormanager: usersrolename=' + JSON.stringify(usersRoleName));
+        console.log('isuseradminormanager: role=' + JSON.stringify(usersRoleName));
 
-        return usersRoleName === "Manager" || usersRoleName === "Admin";
+        return usersRoleName === MANAGER_USER_ROLE || usersRoleName === ADMIN_USER_ROLE;
     }
 
     const isUserAdmin = async (userId) => {
@@ -49,26 +55,25 @@ const startUserRepository = () => {
         const usersRoleId = user.userRole;
         const usersRoleName = await getRolesName(usersRoleId);
 
-        console.log('isuseradmin: usersrolename=' + JSON.stringify(usersRoleName));
+        console.log('isuseradmin: role=' + JSON.stringify(usersRoleName));
 
-        return usersRoleName === "Admin";
+        return usersRoleName === ADMIN_USER_ROLE;
     }
 
     const getAll = async () => {
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
-            url: 'https://dev-71pxajof3gt25bcw.us.auth0.com/api/v2/users',
+            url: AUTH0_API_MAIN_ENDPOINT,
             headers: {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${process.env.MANAGEMENT_API_TOKEN}`
             }
         };
-        console.log('config for axios: ' + JSON.stringify(config));
 
         return axios.request(config)
             .then((response) => {
-                console.log('in repository response: ' + JSON.stringify(response.data));
+                console.log('repository response for getAll: ' + JSON.stringify(response.data));
                 return response.data;
             })
             .catch((error) => {
@@ -79,7 +84,7 @@ const startUserRepository = () => {
     const add = async ({ name, email, password, roleName }) => {
         console.log('repo will add user with rolename=' + JSON.stringify(roleName));
         const db = await connectToDatabase();
-        const userRolesCollection = db.collection("UserRoles");
+        const userRolesCollection = db.collection(USER_ROLES_MONGO_COLLECTION_NAME);
         const role = await userRolesCollection.findOne({ roleName: roleName });
         if (!role) {
             throw new Error(`Role with name ${roleName} not found`);
@@ -93,7 +98,7 @@ const startUserRepository = () => {
         let config = {
             method: 'post',
             maxBodyLength: Infinity,
-            url: 'https://dev-71pxajof3gt25bcw.us.auth0.com/api/v2/users',
+            url: AUTH0_API_MAIN_ENDPOINT,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -108,8 +113,8 @@ const startUserRepository = () => {
                 console.log('added user id: ' + JSON.stringify(userId));
 
                 const db = await connectToDatabase();
-                let collection = await db.collection("AppUsers");
-                const userForDb = { id: userId.substring(6, userId.length), favoriteBreed: "", userRole: roleId };
+                let collection = await db.collection(USERS_MONGO_COLLECTION_NAME);
+                const userForDb = { id: userId.substring(AUTH0_USER_ID_PREFIX_LENGTH, userId.length), favoriteBreed: "", userRole: roleId };
                 await collection.insertOne(userForDb);
 
                 return "";
@@ -124,7 +129,7 @@ const startUserRepository = () => {
         let config = {
             method: 'delete',
             maxBodyLength: Infinity,
-            url: `https://dev-71pxajof3gt25bcw.us.auth0.com/api/v2/users/${userId}`,
+            url: `${AUTH0_API_MAIN_ENDPOINT}/${userId}`,
             headers: {
                 'Authorization': `Bearer ${process.env.MANAGEMENT_API_TOKEN}`
             }
@@ -144,7 +149,7 @@ const startUserRepository = () => {
 
         const db = await connectToDatabase();
 
-        const userRolesCollection = db.collection("UserRoles");
+        const userRolesCollection = db.collection(USER_ROLES_MONGO_COLLECTION_NAME);
         const role = await userRolesCollection.findOne({ roleName: newRole });
         if (!role) {
             throw new Error(`Role with name ${newRole} not found`);
@@ -153,14 +158,8 @@ const startUserRepository = () => {
 
         const query = { id: id };
         const updates = { $set: { userRole: roleId } };
-        const appUsersCollection = await db.collection("AppUsers");
+        const appUsersCollection = await db.collection(USERS_MONGO_COLLECTION_NAME);
         await appUsersCollection.updateOne(query, updates);
-
-        // allCats = allCats.map(currentCat => {
-        //     if (currentCat.id === id)
-        //         return newCat;
-        //     return currentCat;
-        // });
     }
 
     const updateName = async (id, newName) => {
@@ -173,7 +172,7 @@ const startUserRepository = () => {
         let config = {
             method: 'patch',
             maxBodyLength: Infinity,
-            url: 'https://dev-71pxajof3gt25bcw.us.auth0.com/api/v2/users/auth0|' + id,
+            url: `${AUTH0_API_MAIN_ENDPOINT}/auth0|` + id,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -193,8 +192,8 @@ const startUserRepository = () => {
 
     const addBasicUserInformation = async (id) => {
         const db = await connectToDatabase();
-        let collection = await db.collection("AppUsers");
-        const userForDb = { id: id, favoriteBreed: "", userRole: 1, money: 50 };
+        let collection = await db.collection(USERS_MONGO_COLLECTION_NAME);
+        const userForDb = { id: id, favoriteBreed: "", userRole: REGULAR_USER_ROLE_ID, money: NEW_PLAYER_MONEY_AMOUNT };
         await collection.insertOne(userForDb);
     }
 
@@ -202,7 +201,7 @@ const startUserRepository = () => {
         console.log(`Adding money: User ID ${userId}, Amount ${amount}`);
 
         const db = await connectToDatabase();
-        const collection = db.collection("AppUsers");
+        const collection = db.collection(USERS_MONGO_COLLECTION_NAME);
 
         await collection.updateOne(
             { id: userId },
@@ -213,15 +212,15 @@ const startUserRepository = () => {
     const getByIdAuth0 = async (wantedId) => {
         const allUsers = await getAll();
         return (allUsers.filter(user => {
-            // console.log(`id of compared user is: ${user.identities[0].user_id}`);
             return user.identities[0].user_id === wantedId;
         }))[0];
     }
 
     const getCutenessLeaderboard = async () => {
+        console.log(`repository will get leaderboard`);
         try {
             const db = await connectToDatabase();
-            const catsCollection = db.collection("Cats");
+            const catsCollection = db.collection(CATS_MONGO_COLLECTION_NAME);
 
             const leaderboardAggregation = [
                 {
@@ -238,7 +237,7 @@ const startUserRepository = () => {
                 },
                 {
                     $lookup: {
-                        from: "AppUsers",
+                        from: USERS_MONGO_COLLECTION_NAME,
                         localField: "_id",
                         foreignField: "id",
                         as: "user"
@@ -250,7 +249,6 @@ const startUserRepository = () => {
                 {
                     $project: {
                         _id: 0,
-                        // userName: "$user.name",
                         userName: "$user.id",
                         totalCuteness: 1
                     }
@@ -261,12 +259,17 @@ const startUserRepository = () => {
             ];
 
             const leaderboard = await catsCollection.aggregate(leaderboardAggregation).toArray();
+            const allUsersAuth0 = await getAll();
             for (let entry of leaderboard) {
-                const user = await getByIdAuth0(entry.userName);
-                console.log(`get by id auth0 user: ${user}`);
-                entry.userName = user.name || "error";
+                console.log(`leaderboard entry: ${JSON.stringify(entry)}`);
+
+                const user = (allUsersAuth0.filter(testedUser => {
+                    return testedUser.identities[0].user_id === entry.userName;
+                }))[0];
+                console.log(`leaderboard - auth0 user: ${JSON.stringify(user)}`);
+                entry.userName = user.name || ERROR_STRING;
             }
-            console.log(`repo leaderboard: ${JSON.stringify(leaderboard)}`);
+            console.log(`repository leaderboard: ${JSON.stringify(leaderboard)}`);
 
             return leaderboard;
         } catch (error) {
@@ -281,4 +284,4 @@ const startUserRepository = () => {
     };
 }
 
-module.exports = { startUserRepository, errorUser };
+module.exports = { startUserRepository };

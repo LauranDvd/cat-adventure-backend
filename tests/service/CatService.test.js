@@ -1,6 +1,7 @@
 const { startCatService } = require('../../service/CatService');
-const { startCatRepository, errorCat } = require('../../repository/CatRepository');
+const { startCatRepository } = require('../../repository/CatRepository');
 const { beforeEach } = require('node:test');
+const { ERROR_CAT } = require('../../utils/Constants');
 
 const mockCats = [
     { id: 1, name: 'Cat 1', age: 3, weight: 5 },
@@ -59,12 +60,12 @@ describe('getAllCatsSortedAndPaginated', () => {
 });
 
 describe('getCatById test', () => {
-    it('returns errorcat if id is not a number', async () => {
+    it('returns error cat if id is not a number', async () => {
         const service = startCatService();
 
         const result = await service.getCatById("string");
 
-        expect(result).toEqual(errorCat);
+        expect(result).toEqual(ERROR_CAT);
     });
 
     it('returns the cat with that id from the repo if id is a number', async () => {

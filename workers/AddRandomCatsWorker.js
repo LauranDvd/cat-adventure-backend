@@ -1,13 +1,13 @@
 const { faker } = require('@faker-js/faker');
 
 const connectToDatabase = require("../database/DBConnection");
+const { CATS_MONGO_COLLECTION_NAME } = require("../utils/Constants");
+
 // const { sendSignal } = require('../sockets/ClientWebSocket');
 
 let toBeAdded = [];
 
 module.exports = async ({ interval, bulkSize }) => {
-    // console.log('started piscinas function');
-
     const getRandomName = () => {
         return faker.person.firstName();
     }
@@ -20,10 +20,8 @@ module.exports = async ({ interval, bulkSize }) => {
         return faker.number.int(10) + faker.number.float({ fractionDigits: 2 });
     }
 
-    // console.log('we are in the worker');
-
     const db = await connectToDatabase();
-    let collection = await db.collection("Cats");
+    let collection = await db.collection(CATS_MONGO_COLLECTION_NAME);
 
     while (true) {
         const cat = {
@@ -31,9 +29,7 @@ module.exports = async ({ interval, bulkSize }) => {
             age: getRandomAge(),
             weight: getRandomWeight()
         };
-        // console.log('will addonecat');
         await addOneCat(cat, collection, bulkSize);
-        // console.log('did addonecat');
 
         if (interval > 0)
             await sleep(interval);
@@ -49,15 +45,11 @@ const addOneCat = async ({ name, age, weight }, catCollection, bulkSize) => {
 }
 
 const processToBeAdded = async (catCollection) => {
-    // console.log('in processtobeadded');
-
     const session = catCollection.client.startSession();
     session.startTransaction();
 
     let maximumId = (await catCollection.find({}).sort({ id: -1 }).limit(1).toArray())[0].id;
     let nextId = parseInt(maximumId) + 1;
-
-    // console.log('got max id: ' + JSON.stringify(maximumId));
 
     const newCats = toBeAdded.map(cat => ({
         id: nextId++,
@@ -68,7 +60,6 @@ const processToBeAdded = async (catCollection) => {
     }));
 
     await catCollection.insertMany(newCats);
-    // console.log('did insertmany');
 
     toBeAdded = [];
 

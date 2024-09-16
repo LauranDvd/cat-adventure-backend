@@ -23,9 +23,6 @@ const toyHasOnlyTheRequiredProperties = (toy) => {
         && Object.keys(toy).length === toyJsonProperties.length;
 }
 
-router.get('/', (_req, res, _next) => {
-    res.send('toys route...');
-});
 
 router.get('/count', async (_req, res, _next) => {
     console.log('api - entered count');
@@ -33,22 +30,6 @@ router.get('/count', async (_req, res, _next) => {
     console.log('api - obtained count');
     res.json({ count: count });
 })
-
-router.get('/all', async (_req, res, _next) => {
-    res.json(await getAllToys());
-});
-
-router.route("/get-by-id/:id").get(async (req, res) => {
-    let givenId = req.params.id;
-
-    const toy = await getToyById(givenId);
-
-    if (toy.id === ERROR_TOY_ID) {
-        return res.status(404).json({ error: `No toy with id ${givenId}` });
-    }
-
-    res.json(toy);
-});
 
 router.post("/add", async (req, res, _next) => {
     let givenToy = req.body;
@@ -97,6 +78,22 @@ router.route("/delete/:id").delete(async (req, res) => {
     deleteToy(givenId);
 
     return res.json({ message: "Successfully deleted the toy" });
+});
+
+router.get('/all', async (_req, res, _next) => {
+    res.json(await getAllToys());
+});
+
+router.route("/get-by-id/:id").get(async (req, res) => {
+    let givenId = req.params.id;
+
+    const toy = await getToyById(givenId);
+
+    if (toy.id === ERROR_TOY_ID) {
+        return res.status(404).json({ error: `No toy with id ${givenId}` });
+    }
+
+    res.json(toy);
 });
 
 module.exports = router;

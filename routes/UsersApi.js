@@ -63,18 +63,6 @@ router.route("/money").get(async (req, res) => {
     });
 });
 
-router.route("/get-all").get(async (req, res) => {
-    return checkAdminTokenThenExecute(req, res, async function (decoded) {
-        console.log('get all passed the admin token check');
-
-        const allUsers = await getAllUsers();
-        if (allUsers === undefined || allUsers.length === 0) {
-            return res.status(400);
-        }
-        return res.status(200).json(allUsers);
-    })
-})
-
 router.route("/others-role-name").get(async (req, res) => {
     return checkAdminTokenThenExecute(req, res, async function (decoded) {
         console.log('get others role name passed the admin token check');
@@ -90,38 +78,6 @@ router.route("/others-role-name").get(async (req, res) => {
         }
 
         res.status(200).json(roleName);
-    });
-});
-
-router.route("/create").post(async (req, res) => {
-    return checkAdminTokenThenExecute(req, res, async function (decoded) {
-        let givenUser = req.body;
-
-        if (!validateUser(givenUser))
-            return res.status(400).json({ error: `User has an invalid form` });
-
-        const errors = await addUser(givenUser);
-        if (errors === "") {
-            return res.json({ message: "Successfully added the user" });
-        }
-        else {
-            console.log('adding invalid user: ' + errors);
-            return res.status(400).json({ error: `User is not valid: ${errors}` });
-        }
-    });
-})
-
-router.route("/delete/:user_id").delete(async (req, res) => {
-    return checkAdminTokenThenExecute(req, res, async function (decoded) {
-        let userId = req.params.user_id;
-        console.log('received delete with id=' + JSON.stringify(userId));
-
-        if (deleteUser(userId)) {
-            return res.json({ message: "Successfully deleted the user" });
-        }
-        else {
-            return res.status(400).json({ error: `Could not delete the user` });
-        }
     });
 });
 
@@ -184,6 +140,50 @@ router.get("/leaderboard", async (req, res) => {
     console.log('api result: ' + JSON.stringify(result));
     res.status(200).json(result);
 })
+
+router.route("/").get(async (req, res) => {
+    return checkAdminTokenThenExecute(req, res, async function (decoded) {
+        console.log('get all passed the admin token check');
+
+        const allUsers = await getAllUsers();
+        if (allUsers === undefined || allUsers.length === 0) {
+            return res.status(400);
+        }
+        return res.status(200).json(allUsers);
+    })
+})
+
+router.route("/").post(async (req, res) => {
+    return checkAdminTokenThenExecute(req, res, async function (decoded) {
+        let givenUser = req.body;
+
+        if (!validateUser(givenUser))
+            return res.status(400).json({ error: `User has an invalid form` });
+
+        const errors = await addUser(givenUser);
+        if (errors === "") {
+            return res.json({ message: "Successfully added the user" });
+        }
+        else {
+            console.log('adding invalid user: ' + errors);
+            return res.status(400).json({ error: `User is not valid: ${errors}` });
+        }
+    });
+})
+
+router.route("/:user_id").delete(async (req, res) => {
+    return checkAdminTokenThenExecute(req, res, async function (decoded) {
+        let userId = req.params.user_id;
+        console.log('received delete with id=' + JSON.stringify(userId));
+
+        if (deleteUser(userId)) {
+            return res.json({ message: "Successfully deleted the user" });
+        }
+        else {
+            return res.status(400).json({ error: `Could not delete the user` });
+        }
+    });
+});
 
 
 module.exports = router;

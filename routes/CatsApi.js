@@ -53,7 +53,138 @@ router.get('/', async (req, res, _next) => {
   res.status(200).json(result);
 });
 
-router.route("/get-by-id/:id").get(async (req, res) => {
+router.route("/users-favorite-breed").get(async (req, res) => {
+  checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
+
+    const breed = await getUsersFavoriteBreed(userId);
+
+    if (breed === "") {
+      return res.status(404).json({ error: `User does not exist or have favorite breed` });
+    }
+
+    res.status(200).json(breed);
+  });
+});
+
+router.route("/mine").get(async (req, res) => {
+  return checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
+
+    const myCats = await getMyCats(userId);
+    console.log('api - my cats: ' + JSON.stringify(myCats));
+
+    if (myCats === undefined) {
+      return res.status(400);
+    }
+    return res.status(200).json(myCats);
+  })
+});
+
+router.route("/toys-per-cat").get(async (req, res) => {
+  let count = req.query.count;
+
+  const toysPerCat = await getToysPerCat(count);
+  res.status(200).json(toysPerCat);
+});
+
+router.get('/age-distribution', async (_req, res, _next) => {
+  const ageDistribution = await getCatAgeDistribution();
+  console.log('api age distribution: ' + JSON.stringify(ageDistribution));
+  res.status(200).json(ageDistribution);
+});
+
+router.post("/buy", async (req, res) => {
+  checkTokenThenExecute(req, res, function (decoded) {
+    let catId = req.body.catId;
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
+
+    if (buyCatById(catId, userId)) {
+      return res.json({ message: "Successfully bought the cat" });
+    }
+    else {
+      return res.status(400).json({ error: `Could not buy the cat` });
+    }
+  });
+});
+
+router.route("/update-cuteness/:id").put(async (req, res) => {
+  let catId = parseInt(req.params.id);
+  const newCuteness = req.body.newCuteness;
+
+  const cat = await getCatById(catId);
+  if (cat.id === ERROR_CAT_ID) {
+    return res.status(404).json({ error: `No cat with id ${catId}` });
+  }
+
+  let wasSuccessful = await updateCat(
+    catId,
+    { id: catId, name: cat.name, age: cat.age, weight: cat.weight, cuteness: newCuteness, ownerId: cat.ownerId }
+  );
+  console.log('update cuteness successfulness: ' + wasSuccessful);
+
+  if (wasSuccessful) {
+    return res.json({ message: "Successfully updated the cat" });
+  }
+  else {
+    return res.status(400).json({ error: `Cat is not valid` });
+  }
+});
+
+router.route("/quiz-questions").post(async (_req, res) => {
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "system", content: GENERATE_QUIZ_OPENAI_PROMPT }],
+    model: OPENAI_MODEL,
+  });
+
+  const responseQuiz = completion.choices[0].message.content;
+
+  console.log('generated quiz: ' + responseQuiz);
+  return res.status(200).json(JSON.parse(responseQuiz));
+});
+
+router.route("/avatar").post(async (req, res) => {
+  checkTokenThenExecute(req, res, async function (decoded) {
+    console.log(`entered api - set avatar`);
+
+    const catId = req.body.catId;
+    const prompt = req.body.prompt;
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
+
+    const cat = await getCatById(catId);
+    if (cat.id === ERROR_CAT_ID) {
+      return res.status(404).json({ error: `No cat with id ${catId}` });
+    }
+    if (cat.ownerId !== userId) {
+      return res.status(401).json({ error: `Not your cat` });
+    }
+
+    let wasSuccessful = await setAvatar(catId, prompt);
+
+    if (wasSuccessful) {
+      return res.json({ message: "Successfully set avatar" });
+    }
+    else {
+      return res.status(400).json({ error: `Couldnt set avatar` });
+    }
+  });
+});
+
+router.route("/my-cutest").get(async (req, res) => {
+  return checkTokenThenExecute(req, res, async function (decoded) {
+    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
+
+    const myCutest = await getMyCutest(userId);
+    console.log('api - my cutest: ' + JSON.stringify(myCutest));
+
+    if (myCutest === undefined) {
+      return res.status(400);
+    }
+    return res.status(200).json(myCutest);
+  })
+});
+
+router.route("/:id").get(async (req, res) => {
   let givenId = req.params.id;
 
   const cat = await getCatById(givenId);
@@ -129,135 +260,5 @@ router.route("/:id").delete(async (req, res) => {
   });
 });
 
-router.route("/users-favorite-breed").get(async (req, res) => {
-  checkTokenThenExecute(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
-
-    const breed = await getUsersFavoriteBreed(userId);
-
-    if (breed === "") {
-      return res.status(404).json({ error: `User does not exist or have favorite breed` });
-    }
-
-    res.status(200).json(breed);
-  });
-});
-
-router.route("/mine").get(async (req, res) => {
-  return checkTokenThenExecute(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
-
-    const myCats = await getMyCats(userId);
-    console.log('api - my cats: ' + JSON.stringify(myCats));
-
-    if (myCats === undefined) {
-      return res.status(400);
-    }
-    return res.status(200).json(myCats);
-  })
-});
-
-router.route("/toys_per_cat").get(async (req, res) => {
-  let count = req.query.count;
-
-  const toysPerCat = await getToysPerCat(count);
-  res.status(200).json(toysPerCat);
-});
-
-router.get('/age-distribution', async (_req, res, _next) => {
-  const ageDistribution = await getCatAgeDistribution();
-  console.log('api age distribution: ' + JSON.stringify(ageDistribution));
-  res.status(200).json(ageDistribution);
-});
-
-router.post("/buy", async (req, res) => {
-  checkTokenThenExecute(req, res, function (decoded) {
-    let catId = req.body.catId;
-    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
-
-    if (buyCatById(catId, userId)) {
-      return res.json({ message: "Successfully bought the cat" });
-    }
-    else {
-      return res.status(400).json({ error: `Could not buy the cat` });
-    }
-  });
-});
-
-router.route("/update-cuteness/:id").put(async (req, res) => {
-  let catId = parseInt(req.params.id);
-  const newCuteness = req.body.newCuteness;
-
-  const cat = await getCatById(catId);
-  if (cat.id === ERROR_CAT_ID) {
-    return res.status(404).json({ error: `No cat with id ${catId}` });
-  }
-
-  let wasSuccessful = await updateCat(
-    catId,
-    { id: catId, name: cat.name, age: cat.age, weight: cat.weight, cuteness: newCuteness, ownerId: cat.ownerId }
-  );
-  console.log('update cuteness successfulness: ' + wasSuccessful);
-
-  if (wasSuccessful) {
-    return res.json({ message: "Successfully updated the cat" });
-  }
-  else {
-    return res.status(400).json({ error: `Cat is not valid` });
-  }
-});
-
-router.route("/quiz-questions").post(async (_req, res) => {
-  const completion = await openai.chat.completions.create({
-    messages: [{ role: "system", content: GENERATE_QUIZ_OPENAI_PROMPT }],
-    model: OPENAI_MODEL,
-  });
-
-  const responseQuiz = completion.choices[0].message.content;
-
-  console.log('generated quiz: ' + responseQuiz);
-  return res.status(200).json(JSON.parse(responseQuiz));
-});
-
-router.route("/set-avatar").post(async (req, res) => {
-  checkTokenThenExecute(req, res, async function (decoded) {
-    console.log(`entered api - set avatar`);
-
-    const catId = req.body.catId;
-    const prompt = req.body.prompt;
-    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
-
-    const cat = await getCatById(catId);
-    if (cat.id === ERROR_CAT_ID) {
-      return res.status(404).json({ error: `No cat with id ${catId}` });
-    }
-    if (cat.ownerId !== userId) {
-      return res.status(401).json({ error: `Not your cat` });
-    }
-
-    let wasSuccessful = await setAvatar(catId, prompt);
-
-    if (wasSuccessful) {
-      return res.json({ message: "Successfully set avatar" });
-    }
-    else {
-      return res.status(400).json({ error: `Couldnt set avatar` });
-    }
-  });
-});
-
-router.route("/my-cutest").get(async (req, res) => {
-  return checkTokenThenExecute(req, res, async function (decoded) {
-    let userId = decoded.sub.substring(AUTH0_USER_ID_PREFIX_LENGTH, decoded.sub.length);
-
-    const myCutest = await getMyCutest(userId);
-    console.log('api - my cutest: ' + JSON.stringify(myCutest));
-
-    if (myCutest === undefined) {
-      return res.status(400);
-    }
-    return res.status(200).json(myCutest);
-  })
-});
 
 module.exports = router;
